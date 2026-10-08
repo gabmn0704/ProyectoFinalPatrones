@@ -1,19 +1,21 @@
 import { useState, type FormEvent } from "react";
-import { HeartHandshake, Mail, Phone, Plus, ShieldCheck, UserRound, X } from "lucide-react";
+import { HeartHandshake, Mail, Phone, Plus, ShieldCheck, Trash2, UserRound, X } from "lucide-react";
 import type { EmergencyContact } from "../types";
 import { normalizePhoneNumber } from "../lib/emergencyMessage";
 
 interface ContactPanelProps {
   contacts: EmergencyContact[];
   onAdd: (contact: Omit<EmergencyContact, "id" | "user_id">) => Promise<void>;
+  onRemove: (contactId: string) => Promise<void>;
 }
 
-export function ContactPanel({ contacts, onAdd }: ContactPanelProps) {
+export function ContactPanel({ contacts, onAdd, onRemove }: ContactPanelProps) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [saving, setSaving] = useState(false);
+  const [removingId, setRemovingId] = useState("");
   const [error, setError] = useState("");
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -25,7 +27,8 @@ export function ContactPanel({ contacts, onAdd }: ContactPanelProps) {
       if (phone.trim() && !normalizedPhone) {
         throw new Error("Enter a valid international number, including its + country code (for example, +52 55 1234 5678).");
       }
-      await onAdd({ name, email, phone: normalizedPhone ?? "", priority: contacts.length + 1 });
+      const priority = Math.max(0, ...contacts.map(({ priority: currentPriority }) => currentPriority)) + 1;
+      await onAdd({ name, email, phone: normalizedPhone ?? "", priority });
       setName("");
       setEmail("");
       setPhone("");
@@ -49,16 +52,36 @@ export function ContactPanel({ contacts, onAdd }: ContactPanelProps) {
           <label className="field-label">Name<input required maxLength={80} value={name} onChange={(event) => setName(event.target.value)} placeholder="Alex Morgan" /></label>
           <label className="field-label">Email (optional)<input type="email" maxLength={254} value={email} onChange={(event) => setEmail(event.target.value)} placeholder="alex@example.com" /></label>
           <label className="field-label">Phone (optional, for WhatsApp)<input type="tel" maxLength={30} value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+52 55 1234 5678" /></label>
-          {error && <p className="form-message error-message" role="alert">{error}</p>}
           <button className="primary-button" disabled={saving} type="submit">{saving ? "Saving…" : "Save trusted contact"}</button>
         </form>
       )}
+      {error && <p className="form-message error-message" role="alert">{error}</p>}
       <div className="contact-list">
         {contacts.map((contact, index) => (
           <article className="contact-row" key={contact.id}>
             <span className={`contact-avatar contact-color-${index % 3}`}><UserRound size={19} /></span>
             <div className="contact-info"><strong>{contact.name}</strong>{contact.email && <span><Mail size={13} />{contact.email}</span>}{contact.phone && <span><Phone size={13} />{contact.phone}</span>}</div>
             <span className="contact-order">#{contact.priority}</span>
+            <button
+              className="contact-remove"
+              type="button"
+              aria-label={`Remove ${contact.name}`}
+              disabled={Boolean(removingId)}
+              onClick={async () => {
+                if (!window.confirm(`Remove ${contact.name} from your care circle?`)) return;
+                setRemovingId(contact.id);
+                setError("");
+                try {
+                  await onRemove(contact.id);
+                } catch (reason) {
+                  setError(reason instanceof Error ? reason.message : "The contact could not be removed.");
+                } finally {
+                  setRemovingId("");
+                }
+              }}
+            >
+              <Trash2 size={16} />
+            </button>
           </article>
         ))}
         {contacts.length === 0 && <div className="empty-state">Add someone you trust to your care circle.</div>}

@@ -29,21 +29,27 @@ describe("emergency WhatsApp alert", () => {
     expect(normalizePhoneNumber("+012345678")).toBeUndefined();
   });
 
-  it("creates a ready-to-send WhatsApp message for the highest-priority contact with a phone", () => {
-    const result = buildEmergencyWhatsAppLink([
+  it("creates a ready-to-send WhatsApp message for every contact with a valid phone, in priority order", () => {
+    const results = buildEmergencyWhatsAppLink([
+      contact("3", "+52 55 1234 5678", 3),
       contact("2", "+1 202 555 0198", 2),
       contact("1", "", 1),
     ], event);
 
-    expect(result?.contactName).toBe("Contact 2");
-    expect(result?.url).toMatch(/^https:\/\/wa\.me\/12025550198\?text=/);
-    const message = decodeURIComponent(result?.url.split("?text=")[1] ?? "");
+    expect(results.map(({ contactId }) => contactId)).toEqual(["2", "3"]);
+    expect(results[0].contactName).toBe("Contact 2");
+    expect(results[0].url).toMatch(/^https:\/\/wa\.me\/12025550198\?text=/);
+    expect(results[1].url).toMatch(/^https:\/\/wa\.me\/525512345678\?text=/);
+    const message = decodeURIComponent(results[0].url.split("?text=")[1] ?? "");
     expect(message).toContain("Se registró una emergencia en EpiSafe");
     expect(message).toContain("EpiSafe no llama a los servicios de emergencia");
     expect(message).not.toContain("Private notes");
   });
 
   it("returns no link when no contact has an international phone number", () => {
-    expect(buildEmergencyWhatsAppLink([contact("1", "", 1)], event)).toBeUndefined();
+    expect(buildEmergencyWhatsAppLink([
+      contact("1", "", 1),
+      contact("2", "5551234567", 2),
+    ], event)).toEqual([]);
   });
 });

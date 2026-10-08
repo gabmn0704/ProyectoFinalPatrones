@@ -17,7 +17,7 @@ export function jsonResponse(statusCode: number, payload: unknown): HandlerRespo
       "Cache-Control": "no-store",
       "Access-Control-Allow-Origin": process.env.APP_BASE_URL ?? "*",
       "Access-Control-Allow-Headers": "Authorization, Content-Type",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
     },
     body: JSON.stringify(payload),
   };

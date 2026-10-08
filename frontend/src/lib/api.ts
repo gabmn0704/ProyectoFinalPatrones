@@ -40,7 +40,7 @@ export async function saveDailyLog(input: Omit<DailyLog, "id" | "user_id">, useC
 export async function reportSeizure(input: { severity: "mild" | "moderate" | "severe"; duration_minutes: number; notes: string }, useCloud = isCloudConfigured, contacts?: EmergencyContact[]): Promise<EmergencyReportResult> {
   if (useCloud) {
     const result = await cloudRequest<EmergencyReportResult>("/api/events", "POST", input);
-    if (contacts) result.whatsappAlert = buildEmergencyWhatsAppLink(contacts, result.event);
+    result.whatsappAlerts = buildEmergencyWhatsAppLink(contacts ?? [], result.event);
     return result;
   }
   const event = {
@@ -57,7 +57,7 @@ export async function reportSeizure(input: { severity: "mild" | "moderate" | "se
     notificationStatus: savedContacts.length
       ? savedContacts.some(({ email }) => email) ? "not_configured" : "no_email_contacts"
       : "no_contacts",
-    whatsappAlert: buildEmergencyWhatsAppLink(savedContacts, event),
+    whatsappAlerts: buildEmergencyWhatsAppLink(savedContacts, event),
   };
 }
 
@@ -71,4 +71,13 @@ export async function saveContact(input: Omit<EmergencyContact, "id" | "user_id"
     ...current.contacts,
     { ...input, id: crypto.randomUUID(), user_id: getDemoUserId() },
   ]);
+}
+
+export async function removeContact(contactId: string, useCloud = isCloudConfigured): Promise<void> {
+  if (useCloud) {
+    await cloudRequest<{ deleted: boolean }>(`/api/contacts/${encodeURIComponent(contactId)}`, "DELETE");
+    return;
+  }
+  const current = createDemoDashboard();
+  writeLocal("episafe.contacts", current.contacts.filter(({ id }) => id !== contactId));
 }

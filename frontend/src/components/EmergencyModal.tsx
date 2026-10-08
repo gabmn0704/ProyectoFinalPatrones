@@ -13,7 +13,7 @@ export function EmergencyModal({ onClose, onReport }: EmergencyModalProps) {
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [completed, setCompleted] = useState(false);
-  const [whatsappAlert, setWhatsappAlert] = useState<EmergencyReportResult["whatsappAlert"]>();
+  const [whatsappAlerts, setWhatsappAlerts] = useState<EmergencyReportResult["whatsappAlerts"]>([]);
   const [error, setError] = useState("");
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -22,7 +22,7 @@ export function EmergencyModal({ onClose, onReport }: EmergencyModalProps) {
     setError("");
     try {
       const result = await onReport({ severity, duration_minutes: duration, notes });
-      setWhatsappAlert(result.whatsappAlert);
+      setWhatsappAlerts(result.whatsappAlerts);
       setCompleted(true);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "The event could not be saved.");
@@ -41,10 +41,16 @@ export function EmergencyModal({ onClose, onReport }: EmergencyModalProps) {
             <div className="eyebrow">EVENT RECORDED</div>
             <h2 id="emergency-title">Your care circle matters.</h2>
             <p>The event was added to your history. This app does not call emergency services or send WhatsApp messages automatically.</p>
-            {whatsappAlert ? (
-              <a className="primary-button emergency-whatsapp-link" href={whatsappAlert.url} target="_blank" rel="noopener noreferrer">
-                Open WhatsApp for {whatsappAlert.contactName} <ArrowUpRight size={16} />
-              </a>
+            {whatsappAlerts.length ? (
+              <div className="emergency-whatsapp-list" aria-label="WhatsApp alerts by contact">
+                <strong>Prepare a message for each contact:</strong>
+                {whatsappAlerts.map((alert) => (
+                  <a className="primary-button emergency-whatsapp-link" href={alert.url} target="_blank" rel="noopener noreferrer" key={alert.contactId}>
+                    Open WhatsApp for {alert.contactName} <ArrowUpRight size={16} />
+                  </a>
+                ))}
+                <span>Open each contact separately and tap Send in WhatsApp.</span>
+              </div>
             ) : (
               <p>Add a care-circle contact with a phone number in international format (for example, +52 55 1234 5678) to prepare a WhatsApp alert.</p>
             )}

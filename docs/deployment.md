@@ -43,7 +43,7 @@ Set secrets in Netlify's site environment-variable settings or CLI secret store;
 2. Set `RESEND_API_KEY` and `EMERGENCY_FROM_EMAIL` as server-side Netlify environment variables.
 3. Redeploy and test with consenting test recipients.
 
-The emergency form records the event before offering a WhatsApp alert to the highest-priority contact with a valid international phone number. The user must tap the WhatsApp link and then tap Send; EpiSafe does not send WhatsApp messages automatically. The prepared text does not include seizure details. Optional email alerts report when there are no email contacts, email is not configured, delivery fails, or delivery succeeds. EpiSafe does not call emergency services, guarantee message delivery, or replace an agreed emergency action plan.
+The emergency form records the event before offering a separate WhatsApp link for every contact with a valid international phone number, ordered by priority. The user must open each link and tap Send in WhatsApp; EpiSafe does not send WhatsApp messages automatically. The prepared text does not include seizure details. Contacts can be removed from the care circle; authenticated deletes are scoped to the signed-in user's ID. Optional email alerts report when there are no email contacts, email is not configured, delivery fails, or delivery succeeds. EpiSafe does not call emergency services, guarantee message delivery, or replace an agreed emergency action plan.
 
 ## 4. Verify the deployed application
 

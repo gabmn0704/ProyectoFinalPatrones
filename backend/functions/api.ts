@@ -27,7 +27,8 @@ export const handler: Handler = async (event) => {
 
   try {
     const { client, userId } = await authenticatedClient(event);
-    const endpoint = event.path.split("/").filter(Boolean).at(-1);
+    const pathSegments = event.path.split("/").filter(Boolean);
+    const endpoint = pathSegments.at(-1);
 
     if (endpoint === "dashboard") {
       requireMethod(event.httpMethod, "GET");
@@ -111,6 +112,22 @@ export const handler: Handler = async (event) => {
       assertDatabaseSuccess(contactsError);
       const notificationStatus = await notifyCareCircle(userId, (contacts ?? []) as EmergencyContact[]);
       return jsonResponse(201, { data: { event: data, notificationStatus } });
+    }
+
+    if (pathSegments.at(-2) === "contacts" && event.httpMethod === "DELETE") {
+      const contactId = endpoint;
+      if (!contactId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(contactId)) {
+        throw new ApiError(400, "A valid contact ID is required.");
+      }
+      const { data, error } = await client.from("emergency_contacts")
+        .delete()
+        .eq("id", contactId)
+        .eq("user_id", userId)
+        .select("id")
+        .maybeSingle();
+      assertDatabaseSuccess(error);
+      if (!data) throw new ApiError(404, "This emergency contact could not be found.");
+      return jsonResponse(200, { data: { deleted: true } });
     }
 
     if (endpoint === "contacts") {

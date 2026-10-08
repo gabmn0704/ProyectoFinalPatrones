@@ -68,7 +68,7 @@ export interface DashboardData {
 export interface EmergencyReportResult {
   event: SeizureEvent;
   notificationStatus: "sent" | "not_configured" | "no_contacts" | "no_email_contacts" | "failed";
-  whatsappAlert?: { contactName: string; url: string };
+  whatsappAlerts: { contactId: string; contactName: string; url: string }[];
 }
 
 export type AppSection = "overview" | "daily-log" | "history" | "insights" | "care-team" | "assistant";

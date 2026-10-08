@@ -265,7 +265,7 @@ When a seizure happens, quickly record it using **Emergency Mode**.
    
 4. Click "Report Seizure" button
 5. The event is recorded in your history
-6. If a contact has an international phone number, tap "Open WhatsApp" and then tap Send to alert them
+6. Use the WhatsApp button for each contact with a valid international phone number, then tap Send in WhatsApp for each person
 ```
 
 **Important Notes on Seizure Recording:**
@@ -282,7 +282,7 @@ When a seizure happens, quickly record it using **Emergency Mode**.
 ```
 Immediate:
 ✓ Seizure recorded to your medical history
-✓ WhatsApp opens a prepared message for the highest-priority contact with a valid phone number
+✓ WhatsApp opens a prepared message separately for every contact with a valid phone number, ordered by priority
 ✓ Timestamp recorded for doctor reference
 ✓ Confirmation message: "Seizure recorded"
 
@@ -399,7 +399,7 @@ Emergency contacts are trusted people you can reach when you need support.
 
 **What contacts receive:**
 
-When you record an event, EpiSafe saves it to your history. For a contact with a phone number, the dialog offers a WhatsApp link to the highest-priority contact with a valid number. You must open WhatsApp and tap Send yourself; EpiSafe does not send messages automatically or contact emergency services. The prepared text does not include event notes or medical details.
+When you record an event, EpiSafe saves it to your history. The dialog offers a separate WhatsApp link for every contact with a valid international phone number, ordered by priority. Open each contact separately and tap Send yourself; EpiSafe does not send messages automatically or contact emergency services. The prepared text does not include event notes or medical details. You can remove a contact from your care circle with its trash button; the app asks you to confirm first.
 
 Optional email alerts are available only when the server email provider is configured. WhatsApp is not SMS; the recipient needs WhatsApp, and the user must confirm sending in WhatsApp.
 
