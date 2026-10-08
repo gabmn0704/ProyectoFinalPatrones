@@ -24,7 +24,7 @@ netlify.toml               Netlify build, functions, and route configuration
 - **Frontend:** React and TypeScript, built with Vite.
 - **API/backend:** TypeScript Netlify Functions; each private endpoint validates the Supabase user and scopes database operations to that authenticated user.
 - **Database and accounts:** Supabase Auth and PostgreSQL with row-level security.
-- **Hosting:** Netlify for the web application and serverless API; Supabase hosts the database.
+- **Hosting/CI:** GitHub Actions runs typechecking, tests, and the production build; it deploys the application and serverless API to Netlify on pushes to `main`. Supabase hosts the database.
 - **Care-circle email:** Optional Resend integration. An event is still saved if email delivery is not configured or fails; delivery status is shown.
 - **Personalized insights:** A transparent, deterministic pattern-analysis engine written in TypeScript. It compares logged factors with recorded event days and displays the sample size and a non-causation notice. The daily wellness signal explains which same-day inputs changed its illustrative score. It is **not** a trained clinical AI model and is **not** a seizure prediction.
 
@@ -51,7 +51,7 @@ npm.cmd run build
 
 ## Configure cloud services
 
-Follow [the deployment runbook](docs/deployment.md) for Supabase setup, Netlify configuration, server-only secrets, optional notification delivery, and production verification. Never publish the Supabase service-role key or Resend API key to browser code.
+Follow [the deployment runbook](docs/deployment.md) for Supabase setup, GitHub Actions variables and secrets, Netlify configuration, server-only secrets, optional notification delivery, and production verification. Never publish the Supabase service-role key or Resend API key to browser code.
 
 ## Data structures demonstrated
 

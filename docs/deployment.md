@@ -14,12 +14,16 @@ The schema creates `daily_logs`, `seizure_events`, and `emergency_contacts`, wit
 
 ## 2. Deploy from GitHub to Netlify
 
-1. In Netlify, choose **Add new site → Import an existing project** and connect the GitHub repository.
-2. Use the repository root as the base directory. The checked-in `netlify.toml` configures `npm run build`, `dist`, and `backend/functions`.
-3. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to the Supabase URL and anon/public key.
-4. Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to the same project URL and the service-role key. These have no `VITE_` prefix so they are not bundled into the browser.
-5. Deploy the site. The `/api/*` rewrite sends requests to the TypeScript Netlify Function.
-6. Copy the assigned Netlify HTTPS URL into Supabase's allowed redirect URLs and `APP_BASE_URL`, then redeploy.
+1. In Netlify, create a site and connect the GitHub repository, or create an empty Netlify site for CLI deploys. Note its Site ID and create a Netlify personal access token.
+2. In GitHub, add repository Actions variables/secrets under **Settings → Secrets and variables → Actions**:
+   - Variable `VITE_SUPABASE_URL`: the Supabase project URL.
+   - Secret `VITE_SUPABASE_ANON_KEY`: the Supabase anon/public key.
+   - Secret `NETLIFY_AUTH_TOKEN`: the Netlify personal access token.
+   - Secret `NETLIFY_SITE_ID`: the Netlify Site ID.
+3. Use the repository root as the build base. The checked-in `netlify.toml` configures `npm run build`, `dist`, and `backend/functions`.
+4. Set the server-only Netlify Function variables `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to the Supabase URL and service-role key. These have no `VITE_` prefix and are not bundled into the browser.
+5. The GitHub Actions workflow `.github/workflows/netlify.yml` runs `npm ci`, the TypeScript check, unit tests, and the production build on pull requests and pushes to `main`. A push to `main` also deploys `dist` to Netlify using the Netlify CLI. Pull requests are validated but do not deploy production.
+6. Copy the assigned Netlify HTTPS URL into Supabase's allowed redirect URLs and the Netlify Function variable `APP_BASE_URL`. Redeploy after changing environment variables.
 
 Set secrets in Netlify's site environment-variable settings or CLI secret store; do not put real values in `.env.example`, Git, screenshots, or presentation material. For local cloud development, copy `.env.example` to `.env` and fill it privately; `VITE_` values are public by design, while the service-role key must only be consumed in the Netlify Functions runtime.
 
