@@ -28,7 +28,7 @@ netlify.toml               Netlify build, functions, and route configuration
 - **Care-circle email:** Optional Resend integration. An event is still saved if email delivery is not configured or fails; delivery status is shown.
 - **Personalized insights:** A transparent, deterministic pattern-analysis engine written in TypeScript. It compares logged factors with recorded event days and displays the sample size and a non-causation notice. The daily wellness signal explains which same-day inputs changed its illustrative score. It is **not** a trained clinical AI model and is **not** a seizure prediction.
 
-The app starts in interactive demo mode if Supabase is not configured. Demo entries stay in that browser's local storage. Add Supabase configuration to turn on accounts and persistent cloud data.
+If Supabase is not configured, EpiSafe asks for a display name before opening the interactive demo. Each demo name gets a separate set of entries in that browser's local storage; this preview is not a secure login. Add Supabase configuration to enable individual email/password accounts and persistent, user-isolated cloud data.
 
 The dashboard includes a remembered **light/dark appearance toggle**; the selected theme is saved locally and respected on subsequent visits.
 

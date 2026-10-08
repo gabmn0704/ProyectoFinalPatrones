@@ -12,6 +12,8 @@ EpiSafe runs on Netlify and Supabase. The browser application, serverless API, u
 
 The schema creates `daily_logs`, `seizure_events`, and `emergency_contacts`, with per-user row-level security and database constraints. The API also scopes every database query to the authenticated user.
 
+EpiSafe stores a member's display name in Supabase Auth user metadata (`full_name`); a separate public profile table is not required. The sign-up form requires the member's name, email, and password. On an existing account without a saved name, the next sign-in saves the submitted name to Auth metadata. Each care-data table uses the authenticated Supabase user ID and row-level security to keep members' records separate.
+
 ## 2. Deploy from GitHub to Netlify
 
 1. In Netlify, create a site and connect the GitHub repository, or create an empty Netlify site for CLI deploys. Note its Site ID and create a Netlify personal access token.
@@ -38,6 +40,8 @@ The emergency form records the event before attempting notification. The UI repo
 ## 4. Verify the deployed application
 
 - Create an account, confirm the address, sign in, and sign out.
+- Create a second account with a different name and confirm the dashboard greeting and profile label match that account.
+- Sign in as the first account again and verify the name and care records remain its own.
 - Save a check-in and confirm it appears after a reload.
 - Submit the same day's check-in twice and confirm it updates rather than duplicates.
 - Add a consenting test contact and confirm its priority appears in the care circle.

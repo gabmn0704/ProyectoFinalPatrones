@@ -1,5 +1,5 @@
 import type { DashboardData, DailyLog, EmergencyContact, EmergencyReportResult } from "../types";
-import { createDemoDashboard, writeLocal } from "../data/demoData";
+import { createDemoDashboard, getDemoUserId, writeLocal } from "../data/demoData";
 import { isCloudConfigured, supabase } from "./supabase";
 
 async function cloudRequest<T>(path: string, method = "GET", body?: unknown): Promise<T> {
@@ -31,7 +31,7 @@ export async function saveDailyLog(input: Omit<DailyLog, "id" | "user_id">): Pro
     return;
   }
   const current = createDemoDashboard();
-  const updated: DailyLog = { ...input, id: crypto.randomUUID(), user_id: "demo-user" };
+  const updated: DailyLog = { ...input, id: crypto.randomUUID(), user_id: getDemoUserId() };
   const logs = [updated, ...current.logs.filter((log) => log.date !== input.date)];
   writeLocal("episafe.logs", logs);
 }
@@ -41,7 +41,7 @@ export async function reportSeizure(input: { severity: "mild" | "moderate" | "se
   const event = {
     ...input,
     id: crypto.randomUUID(),
-    user_id: "demo-user",
+    user_id: getDemoUserId(),
     occurred_at: new Date().toISOString(),
   };
   const current = createDemoDashboard();
@@ -57,6 +57,6 @@ export async function saveContact(input: Omit<EmergencyContact, "id" | "user_id"
   const current = createDemoDashboard();
   writeLocal("episafe.contacts", [
     ...current.contacts,
-    { ...input, id: crypto.randomUUID(), user_id: "demo-user" },
+    { ...input, id: crypto.randomUUID(), user_id: getDemoUserId() },
   ]);
 }

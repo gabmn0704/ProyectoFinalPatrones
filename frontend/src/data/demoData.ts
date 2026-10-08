@@ -8,11 +8,27 @@ const dayString = (daysAgo: number): string => {
   return localDateString(date);
 };
 
-const userId = "demo-user";
+const demoUserKey = "episafe.demo.name";
+
+export function getDemoUserName(): string {
+  return window.localStorage.getItem(demoUserKey) ?? "";
+}
+
+export function saveDemoUserName(name: string): void {
+  window.localStorage.setItem(demoUserKey, name.trim());
+}
+
+export function getDemoUserId(): string {
+  return `demo-${encodeURIComponent(getDemoUserName().trim().toLowerCase()) || "guest"}`;
+}
+
+function scopedKey(key: string): string {
+  return `${key}.${getDemoUserId()}`;
+}
 
 export const demoLogs: DailyLog[] = Array.from({ length: 14 }, (_, index) => ({
   id: `demo-log-${index}`,
-  user_id: userId,
+  user_id: "demo-template",
   date: dayString(13 - index),
   sleep_hours: [7.5, 6.5, 4.5, 7, 8, 5, 6.5, 4, 7.5, 6, 5.5, 8, 4.5, 6.5][index],
   stress_level: [2, 3, 4, 2, 1, 3, 5, 4, 2, 3, 4, 2, 5, 3][index],
@@ -25,7 +41,7 @@ export const demoLogs: DailyLog[] = Array.from({ length: 14 }, (_, index) => ({
 export const demoEvents: SeizureEvent[] = [
   {
     id: "demo-event-1",
-    user_id: userId,
+    user_id: "demo-template",
     occurred_at: new Date(`${dayString(11)}T08:45:00`).toISOString(),
     severity: "moderate",
     duration_minutes: 2,
@@ -33,7 +49,7 @@ export const demoEvents: SeizureEvent[] = [
   },
   {
     id: "demo-event-2",
-    user_id: userId,
+    user_id: "demo-template",
     occurred_at: new Date(`${dayString(6)}T17:20:00`).toISOString(),
     severity: "mild",
     duration_minutes: 1,
@@ -42,14 +58,15 @@ export const demoEvents: SeizureEvent[] = [
 ];
 
 export const demoContacts: EmergencyContact[] = [
-  { id: "demo-contact-1", user_id: userId, name: "Alex Morgan", email: "alex@example.com", phone: "+1 (555) 014-2201", priority: 1 },
-  { id: "demo-contact-2", user_id: userId, name: "Care team", email: "care@example.com", phone: "+1 (555) 014-2202", priority: 2 },
+  { id: "demo-contact-1", user_id: "demo-template", name: "Alex Morgan", email: "alex@example.com", phone: "+1 (555) 014-2201", priority: 1 },
+  { id: "demo-contact-2", user_id: "demo-template", name: "Care team", email: "care@example.com", phone: "+1 (555) 014-2202", priority: 2 },
 ];
 
 export function createDemoDashboard(): DashboardData {
-  const logs = readLocal<DailyLog[]>("episafe.logs", demoLogs);
-  const events = readLocal<SeizureEvent[]>("episafe.events", demoEvents);
-  const contacts = readLocal<EmergencyContact[]>("episafe.contacts", demoContacts);
+  const userId = getDemoUserId();
+  const logs = readLocal<DailyLog[]>("episafe.logs", demoLogs.map((log) => ({ ...log, user_id: userId })));
+  const events = readLocal<SeizureEvent[]>("episafe.events", demoEvents.map((event) => ({ ...event, user_id: userId })));
+  const contacts = readLocal<EmergencyContact[]>("episafe.contacts", demoContacts.map((contact) => ({ ...contact, user_id: userId })));
   return {
     logs,
     events: [...events].sort((first, second) => second.occurred_at.localeCompare(first.occurred_at)),
@@ -60,11 +77,11 @@ export function createDemoDashboard(): DashboardData {
 }
 
 export function writeLocal<T>(key: string, value: T): void {
-  window.localStorage.setItem(key, JSON.stringify(value));
+  window.localStorage.setItem(scopedKey(key), JSON.stringify(value));
 }
 
 function readLocal<T>(key: string, fallback: T): T {
-  const saved = window.localStorage.getItem(key);
+  const saved = window.localStorage.getItem(scopedKey(key));
   if (!saved) return fallback;
   try {
     return JSON.parse(saved) as T;

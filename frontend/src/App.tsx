@@ -11,7 +11,7 @@ import { LogForm, type LogFormValues } from "./components/LogForm";
 import { RiskCard } from "./components/RiskCard";
 import { Sidebar } from "./components/Sidebar";
 import { Topbar } from "./components/Topbar";
-import { createDemoDashboard } from "./data/demoData";
+import { createDemoDashboard, getDemoUserName, saveDemoUserName } from "./data/demoData";
 import { Stack } from "./lib/dataStructures";
 import { loadDashboard, reportSeizure, saveContact, saveDailyLog } from "./lib/api";
 import { isCloudConfigured, supabase } from "./lib/supabase";
@@ -25,7 +25,12 @@ const sectionTitles: Record<AppSection, { title: string; subtitle: string }> = {
   "care-team": { title: "You don’t have to go it alone.", subtitle: "The people you trust, close at hand when it matters." },
 };
 
-function AuthScreen() {
+interface AuthScreenProps {
+  demoMode: boolean;
+  onDemoContinue: (name: string) => void;
+}
+
+function AuthScreen({ demoMode, onDemoContinue }: AuthScreenProps) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -40,12 +45,20 @@ function AuthScreen() {
     setError("");
     setMessage("");
     try {
-      const result = isSignUp
-        ? await supabase!.auth.signUp({ email, password, options: { data: { full_name: name } } })
-        : await supabase!.auth.signInWithPassword({ email, password });
-      if (result.error) throw result.error;
-      if (isSignUp && !result.data.session) {
-        setMessage("Account created. Check your email to confirm your address, then sign in.");
+      if (name.trim().length < 2) throw new Error("Enter your name so EpiSafe can personalize your care space.");
+      if (isSignUp) {
+        const result = await supabase!.auth.signUp({ email, password, options: { data: { full_name: name.trim() } } });
+        if (result.error) throw result.error;
+        if (!result.data.session) {
+          setMessage("Account created. Check your email to confirm your address, then sign in with your name.");
+        }
+      } else {
+        const result = await supabase!.auth.signInWithPassword({ email, password });
+        if (result.error) throw result.error;
+        if (!result.data.user.user_metadata.full_name) {
+          const { error: profileError } = await supabase!.auth.updateUser({ data: { full_name: name.trim() } });
+          if (profileError) throw profileError;
+        }
       }
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "We could not complete sign-in.");
@@ -59,20 +72,40 @@ function AuthScreen() {
       <div className="auth-card">
         <a className="brand auth-brand" href="/"><span className="brand-mark"><Activity size={21} /></span><span className="brand-copy"><strong>EpiSafe</strong><small>YOUR CARE, IN FOCUS</small></span></a>
         <span className="auth-icon"><LockKeyhole size={21} /></span>
-        <div className="eyebrow">A SPACE THAT’S YOURS</div>
-        <h1>{isSignUp ? "Create your account." : "Welcome back."}</h1>
-        <p className="auth-description">Your wellbeing notes are personal. Sign in to keep your care history private and in sync.</p>
+        <div className="eyebrow">{demoMode ? "A PERSONALIZED PREVIEW" : "A SPACE THAT’S YOURS"}</div>
+        <h1>{demoMode ? "Your care, your way." : isSignUp ? "Create your account." : "Welcome back."}</h1>
+        <p className="auth-description">{demoMode ? "Choose the name you’d like to see in your demo. Your preview stays in this browser until you connect Supabase." : isSignUp ? "Create your private account to keep your care history in sync across sessions." : "Sign in to your private care space. Your name personalizes your dashboard."}</p>
+        {demoMode ? (
+          <form className="auth-form" onSubmit={(event) => {
+            event.preventDefault();
+            const displayName = name.trim();
+            if (displayName.length < 2) {
+              setError("Enter at least two characters for your name.");
+              return;
+            }
+            saveDemoUserName(displayName);
+            onDemoContinue(displayName);
+          }}>
+            <label className="field-label">What should we call you?<input autoComplete="name" maxLength={80} required minLength={2} value={name} onChange={(event) => setName(event.target.value)} placeholder="Your name" /></label>
+            {error && <p className="form-message error-message" role="alert">{error}</p>}
+            <button className="primary-button auth-submit" type="submit">Explore the interactive demo<ArrowRight size={17} /></button>
+            <p className="demo-auth-note"><ShieldAlert size={15} />Demo mode is not a secure account. Add your Supabase project to turn on real sign-in and cloud storage.</p>
+          </form>
+        ) : (
         <form className="auth-form" onSubmit={submit}>
-          {isSignUp && <label className="field-label">Your name<input autoComplete="name" maxLength={80} required value={name} onChange={(event) => setName(event.target.value)} /></label>}
+          <label className="field-label">Your name<input autoComplete="name" maxLength={80} minLength={2} required value={name} onChange={(event) => setName(event.target.value)} placeholder="Your first and last name" /></label>
           <label className="field-label">Email address<input autoComplete="email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
           <label className="field-label">Password<input autoComplete={isSignUp ? "new-password" : "current-password"} type="password" minLength={8} required value={password} onChange={(event) => setPassword(event.target.value)} /></label>
           {error && <p className="form-message error-message" role="alert">{error}</p>}
           {message && <p className="form-message success-message"><Check size={15} />{message}</p>}
           <button className="primary-button auth-submit" disabled={loading} type="submit">{loading ? "Please wait…" : isSignUp ? "Create a private account" : "Sign in"}<ArrowRight size={17} /></button>
         </form>
+        )}
+        {!demoMode && (
         <button className="auth-switch" type="button" onClick={() => { setIsSignUp((value) => !value); setError(""); setMessage(""); }}>
           {isSignUp ? "Already have an account? Sign in" : "New to EpiSafe? Create an account"}
         </button>
+        )}
         <div className="auth-privacy"><ShieldAlert size={15} />This tool supports your care; it does not replace professional medical advice.</div>
       </div>
     </main>
@@ -203,6 +236,7 @@ export default function App() {
   const [active, setActive] = useState<AppSection>("overview");
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [demoUserName, setDemoUserName] = useState(() => getDemoUserName());
   const [authReady, setAuthReady] = useState(!isCloudConfigured);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -218,7 +252,7 @@ export default function App() {
 
   useEffect(() => {
     if (!isCloudConfigured) {
-      setDashboard(createDemoDashboard());
+      if (demoUserName) setDashboard(createDemoDashboard());
       setLoading(false);
       return;
     }
@@ -234,7 +268,7 @@ export default function App() {
       setLoadError("");
     });
     return () => subscription.unsubscribe();
-  }, []);
+  }, [demoUserName]);
 
   const refresh = useCallback(async () => {
     if (isCloudConfigured && !session) return;
@@ -283,7 +317,8 @@ export default function App() {
   };
 
   if (!authReady || loading && !dashboard) return <LoadingScreen />;
-  if (isCloudConfigured && !session) return <AuthScreen />;
+  if (isCloudConfigured && !session) return <AuthScreen demoMode={false} onDemoContinue={() => undefined} />;
+  if (!isCloudConfigured && !demoUserName) return <AuthScreen demoMode onDemoContinue={(name) => { setDemoUserName(name); setDashboard(createDemoDashboard()); }} />;
   if (!dashboard) return (
     <main className="load-error-page">
       <span className="error-symbol"><ShieldAlert size={22} /></span>
@@ -295,8 +330,8 @@ export default function App() {
   );
 
   const selected = sectionTitles[active];
-  const userName = session?.user.user_metadata.full_name ?? session?.user.email ?? "Jamie Parker";
-  const onSignOut = session ? () => { void supabase!.auth.signOut(); } : undefined;
+  const userName = session?.user.user_metadata.full_name ?? demoUserName;
+  const onSignOut = session ? () => { void supabase!.auth.signOut(); } : () => { setDashboard(null); setDemoUserName(""); saveDemoUserName(""); };
   const normalizedSearch = searchQuery.trim().toLowerCase();
   const searchResults = normalizedSearch ? [
     ...dashboard.logs

@@ -977,3 +977,19 @@ body { color: var(--text-primary); background: var(--canvas); transition: backgr
   .factor-sample, .contact-privacy, .history-disclaimer { font-size: 8px; }
   .page-footer { font-size: 9px; }
 }
+
+.demo-auth-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 0;
+  padding: 10px;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--paper-soft);
+  font-size: 8px;
+  line-height: 1.6;
+}
+.demo-auth-note svg { flex: 0 0 15px; color: var(--brand); }
+.demo-auth-note + .auth-privacy { margin-top: 2px; }
