@@ -5,9 +5,9 @@
 EpiSafe has two separate on-device models:
 
 - The **logistic-regression association model**, implemented in TypeScript in `frontend/src/lib/riskEngine.ts`, analyzes the user's recorded check-ins.
-- The **Qwen 2.5 0.5B Instruct** language model, loaded with Transformers.js and ONNX Runtime from `frontend/src/lib/assistantModel.worker.ts`, powers the EpiSafe Guide chat. It runs in a browser Web Worker and does not call an inference API.
+- The **SmolLM2 135M Instruct** language model, loaded with Transformers.js and ONNX Runtime from `frontend/src/lib/assistantModel.worker.ts`, powers the EpiSafe Guide chat. It runs with the CPU/WASM backend inside a browser Web Worker and does not call an inference API.
 
-The chat downloads its quantized model files from Hugging Face on first use (roughly 500–800 MB, depending on browser/runtime selection). Transformers.js caches downloaded files in the browser for later sessions where browser storage permits. A user needs a compatible modern browser, a reliable initial connection, and adequate device memory. Model responses may be slower, less capable, or less reliable than responses from a larger hosted model.
+The chat downloads its quantized model files from Hugging Face on first use (roughly 120 MB). Transformers.js caches downloaded files in the browser for later sessions where browser storage permits. A user needs a compatible modern browser, a reliable initial connection, and adequate device memory. Inference uses CPU/WASM rather than device-specific GPU acceleration for broader compatibility, so responses may take longer. Model responses may be simpler or less reliable than responses from a larger hosted model.
 
 The model learns from one person's recorded daily check-ins and seizure-event days. It estimates an experimental 0–100 association signal for the factors in today's check-in based on patterns in that person's past records. The number is a model score, **not a probability or medical risk estimate**.
 

@@ -20,6 +20,7 @@ interface PendingRequest {
 
 let assistantWorker: Worker | undefined;
 let pendingRequest: PendingRequest | undefined;
+let requestTimeout: ReturnType<typeof setTimeout> | undefined;
 
 export function buildAssistantPrompt(messages: AssistantChatMessage[]): string {
   const instructions = `You are EpiSafe Guide, a supportive educational companion for people affected by epilepsy. Reply in the same language as the user's latest message. Be warm, concise, practical, non-judgmental, and ask at most one relevant follow-up question.
@@ -33,11 +34,25 @@ Safety rules:
 - Do not provide dangerous medical instructions. Be clear when you are uncertain.
 
 Conversation:`;
-  const history = messages.slice(-8).map(({ role, content }) =>
-    `<|im_start|>${role}\n${content}<|im_end|>`,
+  const history = messages.slice(-6).map(({ role, content }) =>
+    `<|im_start|>${role}\n${content.slice(0, 400)}<|im_end|>`,
   ).join("\n");
 
   return `<|im_start|>system\n${instructions}<|im_end|>\n${history}\n<|im_start|>assistant\n`;
+}
+
+function clearRequestTimeout(): void {
+  if (requestTimeout) clearTimeout(requestTimeout);
+  requestTimeout = undefined;
+}
+
+function failPendingRequest(message: string): void {
+  const request = pendingRequest;
+  pendingRequest = undefined;
+  clearRequestTimeout();
+  assistantWorker?.terminate();
+  assistantWorker = undefined;
+  request?.reject(new Error(message));
 }
 
 function getWorker(): Worker {
@@ -50,9 +65,16 @@ function getWorker(): Worker {
       const response = event.data;
       if (response.type === "progress") {
         pendingRequest?.onProgress?.(response.progress);
+        clearRequestTimeout();
+        if (pendingRequest && response.progress.phase !== "downloading") {
+          requestTimeout = setTimeout(() => {
+            failPendingRequest("The on-device AI is taking too long. This device may not have enough memory or processing power; try again with fewer browser tabs open.");
+          }, 90000);
+        }
       } else if (pendingRequest?.requestId === response.requestId) {
         const request = pendingRequest;
         pendingRequest = undefined;
+        clearRequestTimeout();
         if (response.type === "success") request.resolve(response.reply);
         else request.reject(new Error(response.message));
       }
@@ -60,10 +82,14 @@ function getWorker(): Worker {
     assistantWorker.onerror = (event) => {
       const request = pendingRequest;
       pendingRequest = undefined;
+      clearRequestTimeout();
       assistantWorker?.terminate();
       assistantWorker = undefined;
       request?.reject(new Error("The local AI worker stopped unexpectedly. Refresh the page and try again."));
       console.error("The local assistant worker failed.", event.message);
+    };
+    assistantWorker.onmessageerror = () => {
+      failPendingRequest("The local AI returned an unreadable response. Refresh the page and try again.");
     };
   }
   return assistantWorker;
@@ -81,10 +107,15 @@ export function askEpiSafeAssistant(
 
   return new Promise((resolve, reject) => {
     pendingRequest = { requestId, resolve, reject, onProgress };
-    worker.postMessage({
-      type: "generate",
-      requestId,
-      prompt: buildAssistantPrompt(messages),
-    });
+    try {
+      worker.postMessage({
+        type: "generate",
+        requestId,
+        prompt: buildAssistantPrompt(messages),
+      });
+    } catch (error) {
+      pendingRequest = undefined;
+      reject(error instanceof Error ? error : new Error("The local AI request could not be started."));
+    }
   });
 }

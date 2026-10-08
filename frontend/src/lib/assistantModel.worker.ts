@@ -1,7 +1,7 @@
 import { env, pipeline, type ProgressCallback } from "@huggingface/transformers";
 import type { AssistantProgress } from "./assistantApi";
 
-const MODEL_ID = "onnx-community/Qwen2.5-0.5B-Instruct";
+const MODEL_ID = "onnx-community/SmolLM2-135M-Instruct-ONNX-GQA";
 
 type WorkerRequest = {
   type: "generate";
@@ -37,11 +37,12 @@ const progressCallback: ProgressCallback = (info) => {
   }
 };
 
-function createGenerator(device?: "webgpu") {
-  const options = { dtype: "q4" as const, progress_callback: progressCallback };
-  return device
-    ? pipeline("text-generation", MODEL_ID, { ...options, device })
-    : pipeline("text-generation", MODEL_ID, options);
+function createGenerator() {
+  const options = {
+    dtype: "q4" as const,
+    progress_callback: progressCallback,
+  };
+  return pipeline("text-generation", MODEL_ID, options);
 }
 
 type TextGenerator = Awaited<ReturnType<typeof createGenerator>>;
@@ -49,14 +50,7 @@ let generatorPromise: Promise<TextGenerator> | undefined;
 
 async function getGenerator(): Promise<TextGenerator> {
   if (!generatorPromise) {
-    const useWebGpu = typeof navigator !== "undefined" && "gpu" in navigator;
-    generatorPromise = useWebGpu
-      ? createGenerator("webgpu").catch((webGpuError: unknown) => {
-        console.warn("WebGPU is unavailable for the local assistant; retrying with WASM.", webGpuError);
-        reportProgress("loading");
-        return createGenerator();
-      })
-      : createGenerator();
+    generatorPromise = createGenerator();
     generatorPromise = generatorPromise.catch((error: unknown) => {
       generatorPromise = undefined;
       throw error;
@@ -74,7 +68,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
     const generator = await getGenerator();
     reportProgress("generating");
     const result = await generator(prompt, {
-      max_new_tokens: 220,
+      max_new_tokens: 96,
       do_sample: false,
       return_full_text: false,
     });

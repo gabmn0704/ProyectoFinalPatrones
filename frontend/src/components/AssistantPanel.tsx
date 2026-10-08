@@ -106,13 +106,13 @@ export function AssistantPanel() {
       <div className="assistant-panel panel">
         <div className="assistant-heading">
           <span className="assistant-avatar"><Bot size={22} /></span>
-          <div><div className="eyebrow"><Sparkles size={14} /> QWEN 2.5 · 0.5B</div><h2>Your care companion</h2><p>Thoughtful support for reflection and conversations with your care team.</p></div>
+          <div><div className="eyebrow"><Sparkles size={14} /> SMOLLM2 · 135M</div><h2>Your care companion</h2><p>Thoughtful support for reflection and conversations with your care team.</p></div>
           <div className="assistant-online">On this device</div>
         </div>
 
         <div className="assistant-consent">
           <div className="assistant-consent-title"><ShieldAlert size={18} /><strong>Private, on-device AI</strong></div>
-          <p>Your conversation is processed on this device and is not sent to an AI service or stored in EpiSafe's cloud. The first use downloads the Qwen 2.5 0.5B model from Hugging Face (roughly 500–800 MB); your browser caches it for later use. A modern browser and a reliable connection are recommended. This small model may be slower or less capable than paid cloud AI.</p>
+          <p>Your conversation is processed on this device and is not sent to an AI service or stored in EpiSafe's cloud. The first use downloads the SmolLM2 135M model from Hugging Face (roughly 120 MB); your browser caches it for later use. A reliable connection is recommended. This compact model runs on your device's processor and may take longer or give simpler answers than paid cloud AI.</p>
           {progressLabel && (
             <div className="assistant-model-progress" role="status">
               <span>{progressLabel}</span>
