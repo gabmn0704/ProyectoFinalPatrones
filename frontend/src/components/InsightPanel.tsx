@@ -15,7 +15,7 @@ export function InsightPanel({ insights, compact = false }: InsightPanelProps) {
         <div><div className="eyebrow"><Sparkles size={14} /> PERSONAL PATTERNS</div><h2>What your data is telling you</h2></div>
         <span className="ai-tag">YOUR DATA, YOUR INSIGHTS</span>
       </div>
-      <p className="panel-description">Your private check-ins reveal connections in your own day-to-day history.</p>
+      <p className="panel-description">A privacy-first, explainable analysis of your records. Nothing is sent to an AI provider.</p>
       <div className="insight-list">
         {insights.map((insight) => {
           const Icon = icons[insight.icon];

@@ -40,6 +40,92 @@ describe("personalized risk engine", () => {
     expect(insights[0].id).toBe("no-patterns-yet");
   });
 
+  it("uses transparent starter rules until there is enough personal training data", () => {
+    const logs = Array.from({ length: 29 }, (_, index) =>
+      dailyLog(`2026-01-${String(index + 1).padStart(2, "0")}`));
+    const events = Array.from({ length: 4 }, (_, index) => ({
+      id: `event-${index}`,
+      user_id: "patient",
+      occurred_at: `2026-01-${String(index + 1).padStart(2, "0")}T11:00:00.000Z`,
+      severity: "mild" as const,
+      duration_minutes: 1,
+      notes: "",
+    }));
+
+    const report = assessDailyRisk(logs, events, new Date("2026-02-01T12:00:00Z"));
+
+    expect(report.model).toBe("starter-rules");
+    expect(report.trainingDays).toBe(29);
+    expect(report.seizureDays).toBe(4);
+  });
+
+  it("keeps starter rules when there are fewer than 15 logged non-event days", () => {
+    const logs = Array.from({ length: 30 }, (_, index) => {
+      const date = new Date(Date.UTC(2026, 0, 1 + index)).toISOString().slice(0, 10);
+      return dailyLog(date);
+    });
+    const events: SeizureEvent[] = Array.from({ length: 16 }, (_, index) => ({
+      id: `event-${index}`,
+      user_id: "patient",
+      occurred_at: `${logs[index].date}T11:00:00.000Z`,
+      severity: "mild",
+      duration_minutes: 1,
+      notes: "",
+    }));
+
+    const report = assessDailyRisk(logs, events, new Date("2026-02-05T12:00:00Z"));
+
+    expect(report.model).toBe("starter-rules");
+    expect(report.trainingDays).toBe(30);
+    expect(report.seizureDays).toBe(16);
+  });
+
+  it("trains a personal logistic model and responds to a learned factor", () => {
+    const now = new Date("2026-03-05T12:00:00Z");
+    const baselineLogs = Array.from({ length: 60 }, (_, index) => {
+      const date = new Date(Date.UTC(2026, 0, 1 + index)).toISOString().slice(0, 10);
+      return dailyLog(date, index < 10 ? { sleep_hours: 4 } : {});
+    });
+    const events: SeizureEvent[] = Array.from({ length: 10 }, (_, index) => ({
+      id: `event-${index}`,
+      user_id: "patient",
+      occurred_at: `${baselineLogs[index].date}T11:00:00.000Z`,
+      severity: "mild",
+      duration_minutes: 1,
+      notes: "",
+    }));
+
+    const lowSignal = assessDailyRisk([...baselineLogs, dailyLog("2026-03-05")], events, now);
+    const elevatedSignal = assessDailyRisk(
+      [...baselineLogs, dailyLog("2026-03-05", { sleep_hours: 4 })],
+      events,
+      now,
+    );
+
+    expect(lowSignal.model).toBe("personal-logistic");
+    expect(lowSignal.trainingDays).toBe(60);
+    expect(lowSignal.seizureDays).toBe(10);
+    expect(elevatedSignal.model).toBe("personal-logistic");
+    expect(elevatedSignal.score).toBeGreaterThan(lowSignal.score);
+
+    const eventToday: SeizureEvent = {
+      id: "event-today",
+      user_id: "patient",
+      occurred_at: "2026-03-05T11:00:00.000Z",
+      severity: "mild",
+      duration_minutes: 1,
+      notes: "",
+    };
+    const withoutCurrentDayEvent = assessDailyRisk([...baselineLogs, dailyLog("2026-03-05")], events, now);
+    const withCurrentDayEvent = assessDailyRisk(
+      [...baselineLogs, dailyLog("2026-03-05")],
+      [...events, eventToday],
+      now,
+    );
+    expect(withCurrentDayEvent.trainingDays).toBe(withoutCurrentDayEvent.trainingDays);
+    expect(withCurrentDayEvent.seizureDays).toBe(withoutCurrentDayEvent.seizureDays);
+  });
+
   it("describes observed associations with a transparent sample size", () => {
     const logs = [
       dailyLog("2026-10-01", { sleep_hours: 4 }),

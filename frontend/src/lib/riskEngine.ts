@@ -5,9 +5,87 @@ import type { DailyLog, EmergencyContact, PatternInsight, RiskFactor, RiskReport
 const clamp = (value: number, minimum: number, maximum: number): number =>
   Math.min(maximum, Math.max(minimum, value));
 
-export function assessDailyRisk(logs: DailyLog[], now = new Date()): RiskReport {
+type ModelFeatures = [number, number, number, number];
+
+const MIN_TRAINING_DAYS = 30;
+const MIN_SEIZURE_DAYS = 5;
+const MIN_NON_SEIZURE_DAYS = 15;
+const MAX_TRAINING_DAYS = 90;
+
+function getModelFeatures(log: DailyLog): ModelFeatures {
+  return [
+    Number(log.sleep_hours < 5),
+    Number(!log.medication_taken),
+    Number(log.stress_level >= 4),
+    Number(log.caffeine_cups >= 3),
+  ];
+}
+
+function sigmoid(value: number): number {
+  return 1 / (1 + Math.exp(-clamp(value, -20, 20)));
+}
+
+function trainPersonalModel(
+  logs: DailyLog[],
+  seizureDays: Set<string>,
+): { weights: number[]; trainingDays: number; seizureDays: number } | null {
+  const trainingLogs = [...logs]
+    .sort((first, second) => first.date.localeCompare(second.date))
+    .slice(-MAX_TRAINING_DAYS);
+  const positiveDays = trainingLogs.filter((log) => seizureDays.has(log.date)).length;
+  const negativeDays = trainingLogs.length - positiveDays;
+
+  if (
+    trainingLogs.length < MIN_TRAINING_DAYS
+    || positiveDays < MIN_SEIZURE_DAYS
+    || negativeDays < MIN_NON_SEIZURE_DAYS
+  ) return null;
+
+  const rows = trainingLogs.map((log) => ({
+    features: getModelFeatures(log),
+    label: Number(seizureDays.has(log.date)),
+  }));
+  const weights = [Math.log((positiveDays + 0.5) / (negativeDays + 0.5)), 0, 0, 0, 0];
+  const learningRate = 0.08;
+  const regularization = 0.1;
+
+  for (let iteration = 0; iteration < 600; iteration += 1) {
+    const gradients = Array<number>(weights.length).fill(0);
+    for (const row of rows) {
+      const prediction = sigmoid(weights[0] + row.features.reduce(
+        (sum, feature, index) => sum + feature * weights[index + 1],
+        0,
+      ));
+      const error = prediction - row.label;
+      gradients[0] += error;
+      row.features.forEach((feature, index) => {
+        gradients[index + 1] += error * feature;
+      });
+    }
+    weights.forEach((weight, index) => {
+      const penalty = index === 0 ? 0 : regularization * weight;
+      weights[index] -= learningRate * (gradients[index] / rows.length + penalty);
+    });
+  }
+
+  return { weights, trainingDays: trainingLogs.length, seizureDays: positiveDays };
+}
+
+export function assessDailyRisk(
+  logs: DailyLog[],
+  eventsOrNow: SeizureEvent[] | Date = [],
+  currentTime = new Date(),
+): RiskReport {
+  const events = Array.isArray(eventsOrNow) ? eventsOrNow : [];
+  const now = eventsOrNow instanceof Date ? eventsOrNow : currentTime;
   const today = localDateString(now);
+  const trainingWindowStart = new Date(now);
+  trainingWindowStart.setDate(trainingWindowStart.getDate() - MAX_TRAINING_DAYS);
+  const firstTrainingDate = localDateString(trainingWindowStart);
   const log = logs.find((entry) => entry.date === today);
+  const seizureDays = new Set(events.map((event) => event.occurred_at.slice(0, 10)));
+  const priorLogs = logs.filter((entry) => entry.date >= firstTrainingDate && entry.date < today);
+  const personalModel = trainPersonalModel(priorLogs, seizureDays);
   const factors: RiskFactor[] = [];
   let score = 12;
 
@@ -37,11 +115,21 @@ export function assessDailyRisk(logs: DailyLog[], now = new Date()): RiskReport 
   }
 
   const boundedScore = clamp(score, 0, 100);
+  const personalScore = personalModel && log
+    ? Math.round(sigmoid(personalModel.weights[0] + getModelFeatures(log).reduce(
+      (sum, feature, index) => sum + feature * personalModel.weights[index + 1],
+      0,
+    )) * 100)
+    : null;
+  const reportedScore = personalScore ?? boundedScore;
   return {
-    score: boundedScore,
-    level: boundedScore >= 60 ? "high" : boundedScore >= 35 ? "moderate" : "low",
+    score: reportedScore,
+    level: reportedScore >= 60 ? "high" : reportedScore >= 35 ? "moderate" : "low",
     factors,
     updatedAt: now.toISOString(),
+    model: personalScore === null ? "starter-rules" : "personal-logistic",
+    trainingDays: personalModel?.trainingDays ?? priorLogs.length,
+    seizureDays: personalModel?.seizureDays ?? priorLogs.filter((entry) => seizureDays.has(entry.date)).length,
   };
 }
 

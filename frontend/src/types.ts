@@ -43,6 +43,9 @@ export interface RiskReport {
   level: RiskLevel;
   factors: RiskFactor[];
   updatedAt: string;
+  model: "personal-logistic" | "starter-rules";
+  trainingDays: number;
+  seizureDays: number;
 }
 
 export interface PatternInsight {

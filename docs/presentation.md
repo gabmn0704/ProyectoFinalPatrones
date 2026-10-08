@@ -24,11 +24,11 @@ Una herramienta de autocuidado que conecta el registro diario, la observación d
 
 ## Diapositiva 4 — ¿Dónde está la IA?
 
-EpiSafe incluye un motor de análisis personalizado en TypeScript. Agrupa los registros, contrasta los días con factores reportados con los días en que también se registró un evento y ordena las asociaciones observadas.
+EpiSafe incorpora un modelo experimental de **regresión logística personalizada**, implementado en TypeScript y ejecutado localmente en el navegador. Aprende asociaciones entre cuatro factores registrados (sueño corto, medicamento omitido, estrés elevado y cafeína) y días con eventos registrados. Utiliza hasta 90 días de check-ins y regularización para limitar el ajuste excesivo.
 
-**Ejemplo de texto:** “2 de 4 días registrados con sueño menor a cinco horas también tuvieron un evento registrado”. La aplicación aclara que es una asociación de un historial personal pequeño, no una relación causal.
+El modelo solo se activa después de contar con al menos 30 check-ins anteriores, 5 días con eventos y 15 días sin eventos registrados. Antes de alcanzar ese umbral, la interfaz utiliza reglas iniciales transparentes. El modelo excluye el check-in de hoy durante el entrenamiento y presenta los factores observados para que el resultado sea explicable.
 
-El indicador diario es una suma transparente de reglas y factores registrados. No se entrena un modelo clínico ni se predice una crisis. El sistema no diagnostica, modifica dosis ni recomienda tratamientos.
+El puntaje de 0 a 100 es una señal experimental de asociación, **no una probabilidad, pronóstico ni predicción clínica**. No se envían datos a un proveedor de IA. Los registros de la beta son locales y los ejemplos precargados son ficticios. El modelo no está validado clínicamente; no diagnostica, modifica dosis ni recomienda tratamientos.
 
 ## Diapositiva 5 — Estructuras de datos aplicadas
 

@@ -71,7 +71,7 @@ export function createDemoDashboard(): DashboardData {
     logs,
     events: [...events].sort((first, second) => second.occurred_at.localeCompare(first.occurred_at)),
     contacts,
-    risk: assessDailyRisk(logs),
+    risk: assessDailyRisk(logs, events),
     insights: discoverPatterns(logs, events),
   };
 }
