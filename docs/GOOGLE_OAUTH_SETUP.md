@@ -2,6 +2,8 @@
 
 This document describes how to set up Google OAuth sign-in for EpiSafe AI using Supabase authentication.
 
+> **Current beta behavior:** Google and Supabase sign-in are temporarily turned off in the app. Sign-in asks only for a name and stores demo data in this browser. The Supabase client configuration is retained; OAuth setup steps below are for a future reactivation.
+
 ## Overview
 
 EpiSafe AI uses Supabase for authentication and data management. Users can sign in using:

@@ -20,13 +20,13 @@ async function cloudRequest<T>(path: string, method = "GET", body?: unknown): Pr
   return result.data;
 }
 
-export async function loadDashboard(): Promise<DashboardData> {
-  if (isCloudConfigured) return cloudRequest<DashboardData>("/api/dashboard");
+export async function loadDashboard(useCloud = isCloudConfigured): Promise<DashboardData> {
+  if (useCloud) return cloudRequest<DashboardData>("/api/dashboard");
   return createDemoDashboard();
 }
 
-export async function saveDailyLog(input: Omit<DailyLog, "id" | "user_id">): Promise<void> {
-  if (isCloudConfigured) {
+export async function saveDailyLog(input: Omit<DailyLog, "id" | "user_id">, useCloud = isCloudConfigured): Promise<void> {
+  if (useCloud) {
     await cloudRequest<DailyLog>("/api/logs", "POST", input);
     return;
   }
@@ -36,8 +36,8 @@ export async function saveDailyLog(input: Omit<DailyLog, "id" | "user_id">): Pro
   writeLocal("episafe.logs", logs);
 }
 
-export async function reportSeizure(input: { severity: "mild" | "moderate" | "severe"; duration_minutes: number; notes: string }): Promise<EmergencyReportResult> {
-  if (isCloudConfigured) return cloudRequest<EmergencyReportResult>("/api/events", "POST", input);
+export async function reportSeizure(input: { severity: "mild" | "moderate" | "severe"; duration_minutes: number; notes: string }, useCloud = isCloudConfigured): Promise<EmergencyReportResult> {
+  if (useCloud) return cloudRequest<EmergencyReportResult>("/api/events", "POST", input);
   const event = {
     ...input,
     id: crypto.randomUUID(),
@@ -49,8 +49,8 @@ export async function reportSeizure(input: { severity: "mild" | "moderate" | "se
   return { event, notificationStatus: current.contacts.length ? "not_configured" : "no_contacts" };
 }
 
-export async function saveContact(input: Omit<EmergencyContact, "id" | "user_id">): Promise<void> {
-  if (isCloudConfigured) {
+export async function saveContact(input: Omit<EmergencyContact, "id" | "user_id">, useCloud = isCloudConfigured): Promise<void> {
+  if (useCloud) {
     await cloudRequest<EmergencyContact>("/api/contacts", "POST", input);
     return;
   }

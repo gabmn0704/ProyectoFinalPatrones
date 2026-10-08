@@ -25,6 +25,8 @@ const sectionTitles: Record<AppSection, { title: string; subtitle: string }> = {
   "care-team": { title: "You don’t have to go it alone.", subtitle: "The people you trust, close at hand when it matters." },
 };
 
+const DEMO_MODE = true;
+
 interface AuthScreenProps {
   demoMode: boolean;
   onDemoContinue: (name: string) => void;
@@ -261,6 +263,7 @@ function LoadingScreen() {
 }
 
 export default function App() {
+  const cloudEnabled = isCloudConfigured && !DEMO_MODE;
   const [theme, setTheme] = useState<ColorTheme>(() => {
     const savedTheme = window.localStorage.getItem("episafe.theme");
     return savedTheme === "dark" || savedTheme === "light" ? savedTheme : "light";
@@ -269,7 +272,7 @@ export default function App() {
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [demoUserName, setDemoUserName] = useState(() => getDemoUserName());
-  const [authReady, setAuthReady] = useState(!isCloudConfigured);
+  const [authReady, setAuthReady] = useState(!cloudEnabled);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [oauthError, setOAuthError] = useState("");
@@ -284,7 +287,7 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
-    if (!isCloudConfigured) {
+    if (!cloudEnabled) {
       if (demoUserName) setDashboard(createDemoDashboard());
       setLoading(false);
       return;
@@ -358,41 +361,41 @@ export default function App() {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [demoUserName]);
+  }, [cloudEnabled, demoUserName]);
 
   const refresh = useCallback(async () => {
-    if (isCloudConfigured && !session) return;
+    if (cloudEnabled && !session) return;
     setLoading(true);
     setLoadError("");
     try {
-      setDashboard(await loadDashboard());
+      setDashboard(await loadDashboard(cloudEnabled));
     } catch (reason) {
       setLoadError(reason instanceof Error ? reason.message : "Your dashboard could not be loaded.");
     } finally {
       setLoading(false);
     }
-  }, [session]);
+  }, [cloudEnabled, session]);
 
   useEffect(() => {
     if (!authReady) return;
-    if (!isCloudConfigured || session) void refresh();
+    if (!cloudEnabled || session) void refresh();
     else setLoading(false);
-  }, [authReady, refresh, session]);
+  }, [authReady, cloudEnabled, refresh, session]);
 
   const saveLog = async (values: LogFormValues) => {
-    await saveDailyLog(values);
+    await saveDailyLog(values, cloudEnabled);
     await refresh();
     setNotice("Your daily check-in has been saved.");
     window.setTimeout(() => setNotice(""), 3500);
   };
 
   const addContact = async (contact: Omit<EmergencyContact, "id" | "user_id">) => {
-    await saveContact(contact);
+    await saveContact(contact, cloudEnabled);
     await refresh();
   };
 
   const recordEvent = async (input: { severity: "mild" | "moderate" | "severe"; duration_minutes: number; notes: string }): Promise<EmergencyReportResult> => {
-    const result = await reportSeizure(input);
+    const result = await reportSeizure(input, cloudEnabled);
     await refresh();
     if (result.notificationStatus === "not_configured") {
       setNotice("Event saved. Configure Resend in Netlify to enable care-circle email notifications.");
@@ -407,15 +410,15 @@ export default function App() {
   };
 
   if (!authReady || loading && !dashboard) return <LoadingScreen />;
-  if (isCloudConfigured && !session) return <AuthScreen demoMode={false} onDemoContinue={() => undefined} oauthError={oauthError} />;
-  if (!isCloudConfigured && !demoUserName) return <AuthScreen demoMode onDemoContinue={(name) => { setDemoUserName(name); setDashboard(createDemoDashboard()); }} oauthError="" />;
+  if (cloudEnabled && !session) return <AuthScreen demoMode={false} onDemoContinue={() => undefined} oauthError={oauthError} />;
+  if (!cloudEnabled && !demoUserName) return <AuthScreen demoMode onDemoContinue={(name) => { setDemoUserName(name); setDashboard(createDemoDashboard()); }} oauthError="" />;
   if (!dashboard) return (
     <main className="load-error-page">
       <span className="error-symbol"><ShieldAlert size={22} /></span>
       <h1>Your care space couldn’t load.</h1>
       <p role="alert">{loadError || "We couldn’t connect to your saved information."}</p>
       <button className="primary-button" type="button" onClick={() => void refresh()}>Try again</button>
-      {isCloudConfigured && <button className="text-button" type="button" onClick={() => void supabase!.auth.signOut()}>Sign out</button>}
+      {cloudEnabled && <button className="text-button" type="button" onClick={() => void supabase!.auth.signOut()}>Sign out</button>}
     </main>
   );
 
@@ -440,7 +443,7 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <Sidebar active={active} onNavigate={setActive} onEmergency={() => setEmergencyOpen(true)} demoMode={!isCloudConfigured} />
+      <Sidebar active={active} onNavigate={setActive} onEmergency={() => setEmergencyOpen(true)} demoMode={!cloudEnabled} />
       <main className="main-area">
         <Topbar onEmergency={() => setEmergencyOpen(true)} userName={userName} onSignOut={onSignOut} searchQuery={searchQuery} onSearchChange={setSearchQuery} theme={theme} onThemeChange={() => setTheme((current) => current === "light" ? "dark" : "light")} />
         <div className="page-content">
