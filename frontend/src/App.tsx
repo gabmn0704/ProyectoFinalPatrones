@@ -31,6 +31,13 @@ interface AuthScreenProps {
   oauthError: string;
 }
 
+function getOAuthErrorMessage(error: string): string {
+  if (/unable to exchange external code/i.test(error)) {
+    return "Google sign-in reached Supabase, but Supabase could not exchange Google's authorization code. Verify that the Google Client ID and current Client Secret in Supabase belong to the same Web OAuth client. The Google Cloud authorized redirect URI must be https://devtfvejnrtphnlymrmq.supabase.co/auth/v1/callback. The displayed code prefix is not the cause.";
+  }
+  return error;
+}
+
 function AuthScreen({ demoMode, onDemoContinue, oauthError }: AuthScreenProps) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
@@ -92,7 +99,7 @@ function AuthScreen({ demoMode, onDemoContinue, oauthError }: AuthScreenProps) {
         <div className="eyebrow">{demoMode ? "A PERSONALIZED PREVIEW" : "A SPACE THAT’S YOURS"}</div>
         <h1>{demoMode ? "Your care, your way." : isSignUp ? "Create your account." : "Welcome back."}</h1>
         <p className="auth-description">{demoMode ? "Choose the name you’d like to see in your demo. Your preview stays in this browser until you connect Supabase." : isSignUp ? "Create your private account to keep your care history in sync across sessions." : "Sign in to your private care space. Your name personalizes your dashboard."}</p>
-        {oauthError && <p className="form-message error-message" role="alert">{oauthError} Check that this site is allowed in Supabase Authentication URL settings.</p>}
+        {oauthError && <p className="form-message error-message" role="alert">{getOAuthErrorMessage(oauthError)}</p>}
         {demoMode ? (
           <form className="auth-form" onSubmit={(event) => {
             event.preventDefault();

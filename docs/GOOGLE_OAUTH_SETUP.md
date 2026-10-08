@@ -161,6 +161,14 @@ To test Google OAuth on your local machine:
 - Verify the Redirect URI in Google Cloud Console exactly matches the Supabase callback URL
 - No trailing slashes, exact protocol (https), and exact domain
 
+### "Unable to exchange external code"
+- This means Supabase received Google's authorization code but could not exchange it for Google tokens. It is different from the application's Supabase redirect allow-list.
+- In Google Cloud Console → **APIs & Services** → **Credentials**, open the **Web application** OAuth client used by Supabase.
+- Confirm its Authorized redirect URI is exactly `https://devtfvejnrtphnlymrmq.supabase.co/auth/v1/callback`.
+- In Supabase → **Authentication** → **Providers** → **Google**, verify the Client ID and current Client Secret both belong to that same OAuth client. If uncertain, create a new client secret and replace the value in Supabase, then save.
+- A short suffix such as `4/0A` is only a prefix of Google's one-time authorization code, not the underlying cause.
+- Never share the client secret in screenshots, chat, or source control.
+
 ### "Google OAuth provider not enabled"
 - Confirm the toggle is ON in Supabase → Authentication → Providers → Google
 - Wait 5-60 minutes for configuration to propagate
