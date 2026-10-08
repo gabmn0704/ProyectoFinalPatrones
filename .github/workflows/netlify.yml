@@ -50,12 +50,11 @@ jobs:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         run: |
-          if [ -n "$NETLIFY_AUTH_TOKEN" ] && [ -n "$NETLIFY_SITE_ID" ]; then
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Production deploy skipped. Add NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID to repository Actions secrets."
+          if [ -z "$NETLIFY_AUTH_TOKEN" ] || [ -z "$NETLIFY_SITE_ID" ]; then
+            echo "::error::Production deploy cannot run. Add NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID to repository Actions secrets."
+            exit 1
           fi
+          echo "ready=true" >> "$GITHUB_OUTPUT"
 
       - name: Deploy production site to Netlify
         if: steps.netlify.outputs.ready == 'true'
