@@ -404,9 +404,10 @@ test.describe("Daily Check-In Workflow", () => {
     // Confirm emergency
     await page.click('button:has-text("Confirm")');
     
-    // Verify notification sent
-    const successAlert = page.locator(".alert.success");
-    expect(successAlert).toContainText("Contacts notified");
+    // The event is saved and a WhatsApp message can be prepared for the contact.
+    const whatsappLink = page.getByRole("link", { name: /Open WhatsApp for/ });
+    await expect(whatsappLink).toBeVisible();
+    expect(whatsappLink).toHaveAttribute("href", /^https:\/\/wa\.me\//);
   });
 });
 ```

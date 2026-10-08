@@ -1,10 +1,10 @@
 import { useState, type FormEvent } from "react";
-import { AlertTriangle, CheckCircle2, Clock3, HeartPulse, X } from "lucide-react";
-import type { Severity } from "../types";
+import { AlertTriangle, ArrowUpRight, CheckCircle2, Clock3, HeartPulse, X } from "lucide-react";
+import type { EmergencyReportResult, Severity } from "../types";
 
 interface EmergencyModalProps {
   onClose: () => void;
-  onReport: (event: { severity: Severity; duration_minutes: number; notes: string }) => Promise<void>;
+  onReport: (event: { severity: Severity; duration_minutes: number; notes: string }) => Promise<EmergencyReportResult>;
 }
 
 export function EmergencyModal({ onClose, onReport }: EmergencyModalProps) {
@@ -13,6 +13,7 @@ export function EmergencyModal({ onClose, onReport }: EmergencyModalProps) {
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const [whatsappAlert, setWhatsappAlert] = useState<EmergencyReportResult["whatsappAlert"]>();
   const [error, setError] = useState("");
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -20,7 +21,8 @@ export function EmergencyModal({ onClose, onReport }: EmergencyModalProps) {
     setSaving(true);
     setError("");
     try {
-      await onReport({ severity, duration_minutes: duration, notes });
+      const result = await onReport({ severity, duration_minutes: duration, notes });
+      setWhatsappAlert(result.whatsappAlert);
       setCompleted(true);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "The event could not be saved.");
@@ -38,7 +40,15 @@ export function EmergencyModal({ onClose, onReport }: EmergencyModalProps) {
             <span className="complete-icon"><CheckCircle2 size={28} /></span>
             <div className="eyebrow">EVENT RECORDED</div>
             <h2 id="emergency-title">Your care circle matters.</h2>
-            <p>The event was added to your history. If cloud email alerts are configured, your emergency contacts were notified.</p>
+            <p>The event was added to your history. This app does not call emergency services or send WhatsApp messages automatically.</p>
+            {whatsappAlert ? (
+              <a className="primary-button emergency-whatsapp-link" href={whatsappAlert.url} target="_blank" rel="noopener noreferrer">
+                Open WhatsApp for {whatsappAlert.contactName} <ArrowUpRight size={16} />
+              </a>
+            ) : (
+              <p>Add a care-circle contact with a phone number in international format (for example, +52 55 1234 5678) to prepare a WhatsApp alert.</p>
+            )}
+            <p>If someone is in immediate danger, call your local emergency services now.</p>
             <button className="primary-button" type="button" onClick={onClose}>Done</button>
           </div>
         ) : (
@@ -61,7 +71,7 @@ export function EmergencyModal({ onClose, onReport }: EmergencyModalProps) {
                 <textarea rows={3} maxLength={1000} placeholder="Recovery, support received, or anything to share with your care team…" value={notes} onChange={(event) => setNotes(event.target.value)} />
               </label>
               {error && <p className="form-message error-message" role="alert">{error}</p>}
-              <button className="emergency-submit" type="submit" disabled={saving}><HeartPulse size={17} />{saving ? "Recording…" : "Record event & notify care circle"}</button>
+              <button className="emergency-submit" type="submit" disabled={saving}><HeartPulse size={17} />{saving ? "Recording…" : "Record event & prepare alert"}</button>
             </form>
           </>
         )}

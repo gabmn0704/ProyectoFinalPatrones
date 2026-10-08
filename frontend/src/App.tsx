@@ -397,10 +397,14 @@ export default function App() {
   };
 
   const recordEvent = async (input: { severity: "mild" | "moderate" | "severe"; duration_minutes: number; notes: string }): Promise<EmergencyReportResult> => {
-    const result = await reportSeizure(input, cloudEnabled);
+    const result = await reportSeizure(input, cloudEnabled, dashboard?.contacts ?? []);
     await refresh();
-    if (result.notificationStatus === "not_configured") {
+    if (result.whatsappAlert) {
+      setNotice(`Event saved. Open WhatsApp for ${result.whatsappAlert.contactName} and tap Send to notify them.`);
+    } else if (result.notificationStatus === "not_configured") {
       setNotice("Event saved. Configure Resend in Netlify to enable care-circle email notifications.");
+    } else if (result.notificationStatus === "no_email_contacts") {
+      setNotice("Event saved. Add a contact with an international phone number to prepare a WhatsApp alert.");
     } else if (result.notificationStatus === "failed") {
       setNotice("Event saved, but the care-circle email could not be sent. Check your notification settings.");
     } else if (result.notificationStatus === "no_contacts") {
@@ -478,12 +482,12 @@ export default function App() {
           {active === "daily-log" && <div className="content-grid detail-grid"><LogForm onSave={saveLog} /><div className="content-column"><WeekChart logs={dashboard.logs} /><FactorBreakdown logs={dashboard.logs} /></div></div>}
           {active === "history" && <HistoryView data={dashboard} />}
           {active === "insights" && <div className="content-grid insights-grid"><InsightPanel insights={dashboard.insights} /><div className="content-column"><FactorBreakdown logs={dashboard.logs} /><div className="gentle-reminder"><span><Sparkles size={17} /></span><div><strong>Small steps, useful signals.</strong><p>The more consistently you log, the better your personal baseline becomes. Patterns describe history — not cause or future risk.</p></div></div></div></div>}
-          {active === "care-team" && <div className="content-grid care-grid"><ContactPanel contacts={dashboard.contacts} onAdd={addContact} /><section className="panel care-safety"><span className="care-safety-icon"><ShieldAlert size={21} /></span><div className="eyebrow">WHEN IT MATTERS</div><h2>A safer plan starts with a conversation.</h2><p>Share your preferences with someone you trust. Emergency email alerts are sent only when a server email provider is configured.</p><button className="subtle-link" type="button" onClick={() => setEmergencyOpen(true)}>Record an event <ArrowRight size={16} /></button><div className="care-note"><LockKeyhole size={15} /> Your contact details are private to your account.</div></section></div>}
+          {active === "care-team" && <div className="content-grid care-grid"><ContactPanel contacts={dashboard.contacts} onAdd={addContact} /><section className="panel care-safety"><span className="care-safety-icon"><ShieldAlert size={21} /></span><div className="eyebrow">WHEN IT MATTERS</div><h2>A safer plan starts with a conversation.</h2><p>WhatsApp alerts open a prepared message that you send yourself. Optional email alerts require a server email provider.</p><button className="subtle-link" type="button" onClick={() => setEmergencyOpen(true)}>Record an event <ArrowRight size={16} /></button><div className="care-note"><LockKeyhole size={15} /> Your contact details are private to your account.</div></section></div>}
           {active === "assistant" && <AssistantPanel />}
           <footer className="page-footer"><span>© {new Date().getFullYear()} EpiSafe AI</span><span><ShieldAlert size={14} /> For personal tracking only. Not a substitute for professional medical care.</span></footer>
         </div>
       </main>
-      {emergencyOpen && <EmergencyModal onClose={() => setEmergencyOpen(false)} onReport={async (input) => { await recordEvent(input); }} />}
+      {emergencyOpen && <EmergencyModal onClose={() => setEmergencyOpen(false)} onReport={recordEvent} />}
     </div>
   );
 }

@@ -33,7 +33,7 @@ export function Topbar({ onEmergency, userName, onSignOut, searchQuery, onSearch
           <button className="icon-button notification-button" aria-label="Care notifications" aria-expanded={showNotifications} type="button" onClick={() => setShowNotifications((visible) => !visible)}>
             <Bell size={19} />
           </button>
-          {showNotifications && <div className="notification-popover"><span className="notification-popover-icon"><ShieldAlert size={17} /></span><div><strong>Care circle updates</strong><p>Contacts are emailed after an event only when the server email service is configured.</p><button type="button" onClick={() => { setShowNotifications(false); onEmergency(); }}>Record an event</button></div></div>}
+          {showNotifications && <div className="notification-popover"><span className="notification-popover-icon"><ShieldAlert size={17} /></span><div><strong>Care circle updates</strong><p>Open a prepared WhatsApp alert after recording an event. Optional email alerts require a server email service.</p><button type="button" onClick={() => { setShowNotifications(false); onEmergency(); }}>Record an event</button></div></div>}
         </div>
         <button className="theme-toggle" type="button" onClick={onThemeChange} aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`} title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}>
           {theme === "light" ? <Moon size={17} /> : <Sun size={17} />}

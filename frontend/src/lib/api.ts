@@ -1,6 +1,7 @@
 import type { DashboardData, DailyLog, EmergencyContact, EmergencyReportResult } from "../types";
 import { createDemoDashboard, getDemoUserId, writeLocal } from "../data/demoData";
 import { isCloudConfigured, supabase } from "./supabase";
+import { buildEmergencyWhatsAppLink } from "./emergencyMessage";
 
 async function cloudRequest<T>(path: string, method = "GET", body?: unknown): Promise<T> {
   const { data: { session } } = await supabase!.auth.getSession();
@@ -36,8 +37,12 @@ export async function saveDailyLog(input: Omit<DailyLog, "id" | "user_id">, useC
   writeLocal("episafe.logs", logs);
 }
 
-export async function reportSeizure(input: { severity: "mild" | "moderate" | "severe"; duration_minutes: number; notes: string }, useCloud = isCloudConfigured): Promise<EmergencyReportResult> {
-  if (useCloud) return cloudRequest<EmergencyReportResult>("/api/events", "POST", input);
+export async function reportSeizure(input: { severity: "mild" | "moderate" | "severe"; duration_minutes: number; notes: string }, useCloud = isCloudConfigured, contacts?: EmergencyContact[]): Promise<EmergencyReportResult> {
+  if (useCloud) {
+    const result = await cloudRequest<EmergencyReportResult>("/api/events", "POST", input);
+    if (contacts) result.whatsappAlert = buildEmergencyWhatsAppLink(contacts, result.event);
+    return result;
+  }
   const event = {
     ...input,
     id: crypto.randomUUID(),
@@ -46,7 +51,14 @@ export async function reportSeizure(input: { severity: "mild" | "moderate" | "se
   };
   const current = createDemoDashboard();
   writeLocal("episafe.events", [event, ...current.events]);
-  return { event, notificationStatus: current.contacts.length ? "not_configured" : "no_contacts" };
+  const savedContacts = contacts ?? current.contacts;
+  return {
+    event,
+    notificationStatus: savedContacts.length
+      ? savedContacts.some(({ email }) => email) ? "not_configured" : "no_email_contacts"
+      : "no_contacts",
+    whatsappAlert: buildEmergencyWhatsAppLink(savedContacts, event),
+  };
 }
 
 export async function saveContact(input: Omit<EmergencyContact, "id" | "user_id">, useCloud = isCloudConfigured): Promise<void> {

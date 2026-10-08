@@ -26,7 +26,7 @@ create table if not exists public.emergency_contacts (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   name text not null check (char_length(name) between 1 and 80),
-  email text not null check (char_length(email) <= 254),
+  email text check (char_length(email) <= 254),
   phone text not null default '' check (char_length(phone) <= 30),
   priority smallint not null check (priority between 1 and 20),
   created_at timestamptz not null default now()

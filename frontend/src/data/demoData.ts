@@ -58,15 +58,19 @@ export const demoEvents: SeizureEvent[] = [
 ];
 
 export const demoContacts: EmergencyContact[] = [
-  { id: "demo-contact-1", user_id: "demo-template", name: "Alex Morgan", email: "alex@example.com", phone: "+1 (555) 014-2201", priority: 1 },
-  { id: "demo-contact-2", user_id: "demo-template", name: "Care team", email: "care@example.com", phone: "+1 (555) 014-2202", priority: 2 },
+  { id: "demo-contact-1", user_id: "demo-template", name: "Alex Morgan", email: "alex@example.com", phone: "", priority: 1 },
+  { id: "demo-contact-2", user_id: "demo-template", name: "Care team", email: "care@example.com", phone: "", priority: 2 },
 ];
 
 export function createDemoDashboard(): DashboardData {
   const userId = getDemoUserId();
   const logs = readLocal<DailyLog[]>("episafe.logs", demoLogs.map((log) => ({ ...log, user_id: userId })));
   const events = readLocal<SeizureEvent[]>("episafe.events", demoEvents.map((event) => ({ ...event, user_id: userId })));
-  const contacts = readLocal<EmergencyContact[]>("episafe.contacts", demoContacts.map((contact) => ({ ...contact, user_id: userId })));
+  const contacts = readLocal<EmergencyContact[]>("episafe.contacts", demoContacts.map((contact) => ({ ...contact, user_id: userId })))
+    .map((contact) => ({
+      ...contact,
+      phone: ["+1 (555) 014-2201", "+1 (555) 014-2202"].includes(contact.phone) ? "" : contact.phone,
+    }));
   return {
     logs,
     events: [...events].sort((first, second) => second.occurred_at.localeCompare(first.occurred_at)),

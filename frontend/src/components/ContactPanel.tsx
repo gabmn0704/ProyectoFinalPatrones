@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { HeartHandshake, Mail, Phone, Plus, ShieldCheck, UserRound, X } from "lucide-react";
 import type { EmergencyContact } from "../types";
+import { normalizePhoneNumber } from "../lib/emergencyMessage";
 
 interface ContactPanelProps {
   contacts: EmergencyContact[];
@@ -20,7 +21,11 @@ export function ContactPanel({ contacts, onAdd }: ContactPanelProps) {
     setSaving(true);
     setError("");
     try {
-      await onAdd({ name, email, phone, priority: contacts.length + 1 });
+      const normalizedPhone = phone.trim() ? normalizePhoneNumber(phone) : "";
+      if (phone.trim() && !normalizedPhone) {
+        throw new Error("Enter a valid international number, including its + country code (for example, +52 55 1234 5678).");
+      }
+      await onAdd({ name, email, phone: normalizedPhone ?? "", priority: contacts.length + 1 });
       setName("");
       setEmail("");
       setPhone("");
@@ -42,8 +47,8 @@ export function ContactPanel({ contacts, onAdd }: ContactPanelProps) {
       {adding && (
         <form className="contact-form" onSubmit={submit}>
           <label className="field-label">Name<input required maxLength={80} value={name} onChange={(event) => setName(event.target.value)} placeholder="Alex Morgan" /></label>
-          <label className="field-label">Email<input required type="email" maxLength={254} value={email} onChange={(event) => setEmail(event.target.value)} placeholder="alex@example.com" /></label>
-          <label className="field-label">Phone (optional)<input type="tel" maxLength={30} value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+1 (555) 010-0100" /></label>
+          <label className="field-label">Email (optional)<input type="email" maxLength={254} value={email} onChange={(event) => setEmail(event.target.value)} placeholder="alex@example.com" /></label>
+          <label className="field-label">Phone (optional, for WhatsApp)<input type="tel" maxLength={30} value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+52 55 1234 5678" /></label>
           {error && <p className="form-message error-message" role="alert">{error}</p>}
           <button className="primary-button" disabled={saving} type="submit">{saving ? "Saving…" : "Save trusted contact"}</button>
         </form>
@@ -52,13 +57,13 @@ export function ContactPanel({ contacts, onAdd }: ContactPanelProps) {
         {contacts.map((contact, index) => (
           <article className="contact-row" key={contact.id}>
             <span className={`contact-avatar contact-color-${index % 3}`}><UserRound size={19} /></span>
-            <div className="contact-info"><strong>{contact.name}</strong><span><Mail size={13} />{contact.email}</span>{contact.phone && <span><Phone size={13} />{contact.phone}</span>}</div>
+            <div className="contact-info"><strong>{contact.name}</strong>{contact.email && <span><Mail size={13} />{contact.email}</span>}{contact.phone && <span><Phone size={13} />{contact.phone}</span>}</div>
             <span className="contact-order">#{contact.priority}</span>
           </article>
         ))}
         {contacts.length === 0 && <div className="empty-state">Add someone you trust to your care circle.</div>}
       </div>
-      <div className="contact-privacy"><ShieldCheck size={15} /> Email notifications need the Resend service configured.</div>
+      <div className="contact-privacy"><ShieldCheck size={15} /> Emergency alerts open WhatsApp with a message ready; you must tap Send.</div>
     </section>
   );
 }

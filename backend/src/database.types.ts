@@ -37,7 +37,7 @@ export type Database = {
           id: string;
           user_id: string;
           name: string;
-          email: string;
+          email: string | null;
           phone: string;
           priority: number;
           created_at: string;

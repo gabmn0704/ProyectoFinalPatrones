@@ -10,7 +10,7 @@ EpiSafe runs on Netlify and Supabase. The browser application, serverless API, u
 4. Keep email confirmation enabled for production sign-ups.
 5. Copy the project URL, the **anon/public** key, and the **service_role** key. The service-role key bypasses row-level security and must remain server-only.
 
-The schema creates `daily_logs`, `seizure_events`, and `emergency_contacts`, with per-user row-level security and database constraints. The API also scopes every database query to the authenticated user.
+The schema creates `daily_logs`, `seizure_events`, and `emergency_contacts`, with per-user row-level security and database constraints. The API also scopes every database query to the authenticated user. Emergency-contact email addresses are optional for WhatsApp alerts; for an existing Supabase project, apply `backend/supabase/migrations/20261008_optional_contact_email.sql` once in the SQL Editor.
 
 EpiSafe stores a member's display name in Supabase Auth user metadata (`full_name`); a separate public profile table is not required. The sign-up form requires the member's name, email, and password. On an existing account without a saved name, the next sign-in saves the submitted name to Auth metadata. Each care-data table uses the authenticated Supabase user ID and row-level security to keep members' records separate.
 
@@ -43,7 +43,7 @@ Set secrets in Netlify's site environment-variable settings or CLI secret store;
 2. Set `RESEND_API_KEY` and `EMERGENCY_FROM_EMAIL` as server-side Netlify environment variables.
 3. Redeploy and test with consenting test recipients.
 
-The emergency form records the event before attempting notification. The UI reports when there are no contacts, email is not configured, delivery fails, or delivery succeeds. The message intentionally contains no seizure details. EpiSafe does not call emergency services, guarantee email delivery, or replace an agreed emergency action plan.
+The emergency form records the event before offering a WhatsApp alert to the highest-priority contact with a valid international phone number. The user must tap the WhatsApp link and then tap Send; EpiSafe does not send WhatsApp messages automatically. The prepared text does not include seizure details. Optional email alerts report when there are no email contacts, email is not configured, delivery fails, or delivery succeeds. EpiSafe does not call emergency services, guarantee message delivery, or replace an agreed emergency action plan.
 
 ## 4. Verify the deployed application
 

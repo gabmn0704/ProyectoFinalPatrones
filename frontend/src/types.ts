@@ -27,7 +27,7 @@ export interface EmergencyContact {
   id: string;
   user_id: string;
   name: string;
-  email: string;
+  email: string | null;
   phone: string;
   priority: number;
 }
@@ -67,7 +67,8 @@ export interface DashboardData {
 
 export interface EmergencyReportResult {
   event: SeizureEvent;
-  notificationStatus: "sent" | "not_configured" | "no_contacts" | "failed";
+  notificationStatus: "sent" | "not_configured" | "no_contacts" | "no_email_contacts" | "failed";
+  whatsappAlert?: { contactName: string; url: string };
 }
 
 export type AppSection = "overview" | "daily-log" | "history" | "insights" | "care-team" | "assistant";

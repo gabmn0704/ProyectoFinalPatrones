@@ -121,8 +121,13 @@ export const handler: Handler = async (event) => {
       }
       requireMethod(event.httpMethod, "POST");
       const body = readRequestBody(event);
-      const email = assertText(body.email, "email", 254);
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new ApiError(400, "email must be a valid email address.");
+      const email = assertText(body.email ?? "", "email", 254, false);
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new ApiError(400, "email must be a valid email address.");
+      const rawPhone = assertText(body.phone ?? "", "phone", 30, false);
+      const phone = rawPhone.replace(/[\s().-]/g, "");
+      if (phone && !/^\+[1-9]\d{7,14}$/.test(phone)) {
+        throw new ApiError(400, "phone must use international format with a + country code.");
+      }
       const { count, error: countError } = await client.from("emergency_contacts")
         .select("id", { count: "exact", head: true }).eq("user_id", userId);
       assertDatabaseSuccess(countError);
@@ -131,8 +136,8 @@ export const handler: Handler = async (event) => {
       const { data, error } = await client.from("emergency_contacts").insert({
         user_id: userId,
         name: assertText(body.name, "name", 80),
-        email,
-        phone: assertText(body.phone ?? "", "phone", 30, false),
+        email: email || null,
+        phone,
         priority: assertNumber(body.priority, "priority", 1, 20),
       }).select().single();
       assertDatabaseSuccess(error);

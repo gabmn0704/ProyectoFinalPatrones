@@ -6,7 +6,7 @@ EpiSafe AI is an intelligent system designed to help you manage your epilepsy by
 - 📊 **Track Health Factors**: Log daily information about sleep, stress, and medication
 - 🔍 **Identify Patterns**: AI analyzes your data to find what triggers your seizures
 - 📈 **Predict Risk**: Get daily risk scores based on your current health status
-- 🚨 **Emergency Mode**: Quickly report seizures and notify emergency contacts
+- 🚨 **Emergency Mode**: Record an event and open a prepared WhatsApp message to a trusted contact
 - 👨‍👩‍👧 **Care Coordination**: Share information with family and healthcare providers
 
 ---
@@ -264,8 +264,8 @@ When a seizure happens, quickly record it using **Emergency Mode**.
    ☑ Yes
    
 4. Click "Report Seizure" button
-5. App sends notification to emergency contacts
-6. Seizure is recorded in your medical history
+5. The event is recorded in your history
+6. If a contact has an international phone number, tap "Open WhatsApp" and then tap Send to alert them
 ```
 
 **Important Notes on Seizure Recording:**
@@ -282,7 +282,7 @@ When a seizure happens, quickly record it using **Emergency Mode**.
 ```
 Immediate:
 ✓ Seizure recorded to your medical history
-✓ Emergency contacts notified (if enabled)
+✓ WhatsApp opens a prepared message for the highest-priority contact with a valid phone number
 ✓ Timestamp recorded for doctor reference
 ✓ Confirmation message: "Seizure recorded"
 
@@ -368,7 +368,7 @@ What you can do NOW to reduce risk:
 
 ### Emergency Contacts
 
-Emergency contacts are people who get notified when you have a seizure.
+Emergency contacts are trusted people you can reach when you need support.
 
 **Why add emergency contacts:**
 - They can get immediate help to you
@@ -392,44 +392,16 @@ Emergency contacts are people who get notified when you have a seizure.
 5. Fill in:
    👤 Name: "Jane Doe"
    👥 Relationship: "Spouse"
-   📱 Phone: "+1-555-0123"
-   📧 Email: "jane@example.com"
-   ✅ Notify on seizure? [Toggle ON]
+   📱 Phone: "+52 55 1234 5678" (optional; use international format)
+   📧 Email: "jane@example.com" (optional)
 6. Click "Save Contact"
 ```
 
 **What contacts receive:**
 
-When you record a seizure, each emergency contact gets:
+When you record an event, EpiSafe saves it to your history. For a contact with a phone number, the dialog offers a WhatsApp link to the highest-priority contact with a valid number. You must open WhatsApp and tap Send yourself; EpiSafe does not send messages automatically or contact emergency services. The prepared text does not include event notes or medical details.
 
-**Email**:
-```
-Subject: Seizure Alert - [Your Name]
-
-Jane,
-
-[Your name] has reported a seizure:
-
-Time: January 15, 2:23 PM
-Duration: 2 minutes
-Severity: Moderate
-Location: Home - Living room
-
-Details: Sudden onset, loss of consciousness
-
-Medical history: [Link to summary]
-
-Please check in with them.
-
-—EpiSafe AI Team
-```
-
-**SMS (Text)** (if phone provided):
-```
-Alert: [Your Name] reported a seizure at 2:23 PM today.
-Duration: 2 min, Moderate severity.
-Check on them if able.
-```
+Optional email alerts are available only when the server email provider is configured. WhatsApp is not SMS; the recipient needs WhatsApp, and the user must confirm sending in WhatsApp.
 
 **Managing contacts:**
 ```
@@ -461,7 +433,7 @@ Edit your information:
 👤 Name: [Your full name]
 📧 Email: [Email address]
 🌍 Country: [For localization]
-📱 Phone: [Optional, for SMS alerts]
+📱 Phone: [Optional, for WhatsApp alerts; include the + country code]
 🎂 Age: [Optional]
 ```
 
@@ -732,7 +704,7 @@ A: Yes! Only you can see your data. Emergency contacts only see seizure alerts.
 A: Not yet in this version, but it's coming! You can manually screenshot/export for now.
 
 **Q: What if I have a seizure and can't use the app?**
-A: Emergency contacts are still notified. Record the seizure when you're able.
+A: EpiSafe cannot notify contacts unless someone opens the app and confirms the message in WhatsApp. Call local emergency services for immediate danger, and use your clinician-provided emergency plan.
 
 **Q: Can I delete a log or seizure?**
 A: Yes, but we keep a backup for medical records. Contact support if you need help.
