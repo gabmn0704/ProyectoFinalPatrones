@@ -1,5 +1,6 @@
 export type RiskLevel = "low" | "moderate" | "high";
 export type Severity = "mild" | "moderate" | "severe";
+export type ColorTheme = "light" | "dark";
 
 export interface DailyLog {
   id: string;

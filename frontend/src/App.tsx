@@ -15,7 +15,7 @@ import { createDemoDashboard } from "./data/demoData";
 import { Stack } from "./lib/dataStructures";
 import { loadDashboard, reportSeizure, saveContact, saveDailyLog } from "./lib/api";
 import { isCloudConfigured, supabase } from "./lib/supabase";
-import type { AppSection, DashboardData, DailyLog, EmergencyContact, EmergencyReportResult } from "./types";
+import type { AppSection, ColorTheme, DashboardData, DailyLog, EmergencyContact, EmergencyReportResult } from "./types";
 
 const sectionTitles: Record<AppSection, { title: string; subtitle: string }> = {
   overview: { title: "A little more in tune.", subtitle: "Your wellbeing is a journey. We’re here for every step." },
@@ -196,6 +196,10 @@ function LoadingScreen() {
 }
 
 export default function App() {
+  const [theme, setTheme] = useState<ColorTheme>(() => {
+    const savedTheme = window.localStorage.getItem("episafe.theme");
+    return savedTheme === "dark" || savedTheme === "light" ? savedTheme : "light";
+  });
   const [active, setActive] = useState<AppSection>("overview");
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -205,6 +209,12 @@ export default function App() {
   const [emergencyOpen, setEmergencyOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    window.localStorage.setItem("episafe.theme", theme);
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme === "dark" ? "#10131d" : "#f5f4f1");
+  }, [theme]);
 
   useEffect(() => {
     if (!isCloudConfigured) {
@@ -303,7 +313,7 @@ export default function App() {
     <div className="app-shell">
       <Sidebar active={active} onNavigate={setActive} onEmergency={() => setEmergencyOpen(true)} demoMode={!isCloudConfigured} />
       <main className="main-area">
-        <Topbar onEmergency={() => setEmergencyOpen(true)} userName={userName} onSignOut={onSignOut} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+        <Topbar onEmergency={() => setEmergencyOpen(true)} userName={userName} onSignOut={onSignOut} searchQuery={searchQuery} onSearchChange={setSearchQuery} theme={theme} onThemeChange={() => setTheme((current) => current === "light" ? "dark" : "light")} />
         <div className="page-content">
           {normalizedSearch && <div className="search-results" role="region" aria-label="Care history search results">
             <div className="search-results-heading"><strong>Search results</strong><button type="button" onClick={() => setSearchQuery("")}>Clear</button></div>
@@ -311,7 +321,12 @@ export default function App() {
           </div>}
           <div className="page-heading">
             <div><div className="eyebrow greeting-eyebrow"><Sunrise size={15} /> GOOD TO SEE YOU, {userName.split(/[ @]/)[0].toUpperCase()}</div><h1>{selected.title}</h1><p>{selected.subtitle}</p></div>
-            <div className="heading-date"><span className="heading-date-icon"><Activity size={17} /></span><div><strong>{dashboard.logs.length}</strong><span>check-ins logged</span></div></div>
+            <div className="hero-emblem" aria-hidden="true">
+              <span className="hero-emblem-orbit orbit-one" />
+              <span className="hero-emblem-orbit orbit-two" />
+              <span className="hero-emblem-sun"><Activity size={27} strokeWidth={1.5} /></span>
+              <span className="hero-emblem-caption"><strong>{dashboard.logs.length} days</strong><small>of showing up for you</small></span>
+            </div>
           </div>
           {loadError && <div className="notice-banner error-message" role="alert">{loadError}<button type="button" onClick={() => void refresh()}>Retry</button></div>}
           {notice && <div className="notice-banner" role="status"><Check size={16} />{notice}<button type="button" onClick={() => setNotice("")}>Dismiss</button></div>}

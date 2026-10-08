@@ -30,6 +30,8 @@ netlify.toml               Netlify build, functions, and route configuration
 
 The app starts in interactive demo mode if Supabase is not configured. Demo entries stay in that browser's local storage. Add Supabase configuration to turn on accounts and persistent cloud data.
 
+The dashboard includes a remembered **light/dark appearance toggle**; the selected theme is saved locally and respected on subsequent visits.
+
 ## Run locally
 
 Requirements: Node.js 20 or later and npm.
