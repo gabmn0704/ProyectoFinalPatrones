@@ -28,9 +28,10 @@ const sectionTitles: Record<AppSection, { title: string; subtitle: string }> = {
 interface AuthScreenProps {
   demoMode: boolean;
   onDemoContinue: (name: string) => void;
+  oauthError: string;
 }
 
-function AuthScreen({ demoMode, onDemoContinue }: AuthScreenProps) {
+function AuthScreen({ demoMode, onDemoContinue, oauthError }: AuthScreenProps) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -91,6 +92,7 @@ function AuthScreen({ demoMode, onDemoContinue }: AuthScreenProps) {
         <div className="eyebrow">{demoMode ? "A PERSONALIZED PREVIEW" : "A SPACE THAT’S YOURS"}</div>
         <h1>{demoMode ? "Your care, your way." : isSignUp ? "Create your account." : "Welcome back."}</h1>
         <p className="auth-description">{demoMode ? "Choose the name you’d like to see in your demo. Your preview stays in this browser until you connect Supabase." : isSignUp ? "Create your private account to keep your care history in sync across sessions." : "Sign in to your private care space. Your name personalizes your dashboard."}</p>
+        {oauthError && <p className="form-message error-message" role="alert">{oauthError} Check that this site is allowed in Supabase Authentication URL settings.</p>}
         {demoMode ? (
           <form className="auth-form" onSubmit={(event) => {
             event.preventDefault();
@@ -263,6 +265,7 @@ export default function App() {
   const [authReady, setAuthReady] = useState(!isCloudConfigured);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [oauthError, setOAuthError] = useState("");
   const [emergencyOpen, setEmergencyOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -279,18 +282,22 @@ export default function App() {
       setLoading(false);
       return;
     }
-    const loadSession = async () => {
-      const { data, error } = await supabase!.auth.getSession();
-      if (error) setLoadError(error.message);
-      setSession(data.session);
-      setAuthReady(true);
-    };
-    void loadSession();
+    const callbackParams = new URLSearchParams(`${window.location.search.slice(1)}&${window.location.hash.slice(1)}`);
+    const callbackError = callbackParams.get("error_description") ?? callbackParams.get("error");
+    if (callbackError) setOAuthError(callbackError);
+
+    let isMounted = true;
     const { data: { subscription } } = supabase!.auth.onAuthStateChange((_event, currentSession) => {
+      if (!isMounted) return;
       setSession(currentSession);
       setLoadError("");
+      setAuthReady(true);
+      if (currentSession) setOAuthError("");
     });
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, [demoUserName]);
 
   const refresh = useCallback(async () => {
@@ -340,8 +347,8 @@ export default function App() {
   };
 
   if (!authReady || loading && !dashboard) return <LoadingScreen />;
-  if (isCloudConfigured && !session) return <AuthScreen demoMode={false} onDemoContinue={() => undefined} />;
-  if (!isCloudConfigured && !demoUserName) return <AuthScreen demoMode onDemoContinue={(name) => { setDemoUserName(name); setDashboard(createDemoDashboard()); }} />;
+  if (isCloudConfigured && !session) return <AuthScreen demoMode={false} onDemoContinue={() => undefined} oauthError={oauthError} />;
+  if (!isCloudConfigured && !demoUserName) return <AuthScreen demoMode onDemoContinue={(name) => { setDemoUserName(name); setDashboard(createDemoDashboard()); }} oauthError="" />;
   if (!dashboard) return (
     <main className="load-error-page">
       <span className="error-symbol"><ShieldAlert size={22} /></span>
