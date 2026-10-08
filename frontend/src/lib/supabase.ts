@@ -4,4 +4,6 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const isCloudConfigured = Boolean(supabaseUrl && supabaseAnonKey);
-export const supabase = isCloudConfigured ? createClient(supabaseUrl, supabaseAnonKey) : null;
+export const supabase = isCloudConfigured
+  ? createClient(supabaseUrl, supabaseAnonKey, { auth: { detectSessionInUrl: false } })
+  : null;

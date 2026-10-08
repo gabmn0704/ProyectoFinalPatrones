@@ -47,7 +47,23 @@ Both methods create isolated user sessions where each person only sees their own
 
 **Note:** Google OAuth configuration can take 5-60 minutes to propagate globally.
 
-## Step 3: Add Test Users (For Development)
+## Step 3: Configure Supabase Redirect URLs
+
+1. In Supabase, open **Authentication** → **URL Configuration**
+2. Set **Site URL** to the production app URL:
+   ```
+   https://episafe-ai-gabmn0704.netlify.app
+   ```
+3. Add the OAuth callback route to **Redirect URLs**:
+   ```
+   https://episafe-ai-gabmn0704.netlify.app/auth/callback
+   ```
+   A wildcard such as `https://episafe-ai-gabmn0704.netlify.app/**` also permits this route.
+4. Save the changes.
+
+The Google Cloud **Authorized redirect URI** remains the Supabase callback URL from Step 1. Do not replace it with the Netlify URL.
+
+## Step 4: Add Test Users (For Development)
 
 When Google OAuth is in development mode, only test users can authenticate:
 
@@ -55,7 +71,7 @@ When Google OAuth is in development mode, only test users can authenticate:
 2. Add test user email addresses (your email, team members, etc.)
 3. These users can now test the sign-in flow
 
-## Step 4: Frontend Integration
+## Step 5: Frontend Integration
 
 The frontend (`frontend/src/App.tsx`) already includes:
 - A "Continue with Google" button in the AuthScreen component
@@ -67,8 +83,8 @@ The frontend (`frontend/src/App.tsx`) already includes:
 1. User clicks "Continue with Google" button
 2. Browser redirects to Google's OAuth consent screen
 3. User approves, Google redirects back to Supabase callback
-4. Supabase creates/updates user session with Google profile data
-5. Frontend automatically redirects to dashboard
+4. Supabase redirects to `/auth/callback` on the Netlify site with a one-time code
+5. The frontend exchanges the code for a Supabase session
 6. Row Level Security (RLS) policies ensure user only sees their data
 
 ## Environment Variables

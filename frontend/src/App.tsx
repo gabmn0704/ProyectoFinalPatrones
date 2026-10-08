@@ -47,7 +47,7 @@ function AuthScreen({ demoMode, onDemoContinue, oauthError }: AuthScreenProps) {
     try {
       const { error: signInError } = await supabase!.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: window.location.origin },
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
       });
       if (signInError) throw signInError;
     } catch (reason) {
@@ -282,18 +282,71 @@ export default function App() {
       setLoading(false);
       return;
     }
-    const callbackParams = new URLSearchParams(`${window.location.search.slice(1)}&${window.location.hash.slice(1)}`);
-    const callbackError = callbackParams.get("error_description") ?? callbackParams.get("error");
-    if (callbackError) setOAuthError(callbackError);
-
     let isMounted = true;
+    let authStateReceived = false;
     const { data: { subscription } } = supabase!.auth.onAuthStateChange((_event, currentSession) => {
       if (!isMounted) return;
+      authStateReceived = true;
       setSession(currentSession);
       setLoadError("");
       setAuthReady(true);
       if (currentSession) setOAuthError("");
     });
+
+    const completeAuthentication = async () => {
+      const callbackUrl = new URL(window.location.href);
+      const params = new URLSearchParams(callbackUrl.search);
+      const hashParams = new URLSearchParams(callbackUrl.hash.slice(1));
+      hashParams.forEach((value, key) => {
+        if (!params.has(key)) params.set(key, value);
+      });
+      const callbackError = params.get("error_description") ?? params.get("error");
+      const code = params.get("code");
+
+      if (callbackError) {
+        setOAuthError(callbackError);
+      } else if (code) {
+        const { data, error } = await supabase!.auth.exchangeCodeForSession(code);
+        if (error) throw error;
+        if (isMounted) {
+          setSession(data.session);
+          setOAuthError("");
+        }
+      } else {
+        const { data, error } = await supabase!.auth.getSession();
+        if (error) throw error;
+        if (isMounted && !authStateReceived) setSession(data.session);
+      }
+
+      if (code || callbackError) {
+        params.delete("code");
+        params.delete("state");
+        params.delete("error");
+        params.delete("error_description");
+        params.delete("error_code");
+        params.delete("error_uri");
+        hashParams.delete("access_token");
+        hashParams.delete("refresh_token");
+        hashParams.delete("expires_in");
+        hashParams.delete("token_type");
+        hashParams.delete("type");
+        const remainingSearch = params.toString();
+        const remainingHash = hashParams.toString();
+        window.history.replaceState(
+          {},
+          document.title,
+          `${callbackUrl.pathname}${remainingSearch ? `?${remainingSearch}` : ""}${remainingHash ? `#${remainingHash}` : ""}`,
+        );
+      }
+      if (isMounted) setAuthReady(true);
+    };
+
+    void completeAuthentication().catch((reason: unknown) => {
+      if (!isMounted) return;
+      setOAuthError(reason instanceof Error ? reason.message : "We could not finish Google sign-in. Please try again.");
+      setAuthReady(true);
+    });
+
     return () => {
       isMounted = false;
       subscription.unsubscribe();
