@@ -479,7 +479,7 @@ export default function App() {
           {active === "history" && <HistoryView data={dashboard} />}
           {active === "insights" && <div className="content-grid insights-grid"><InsightPanel insights={dashboard.insights} /><div className="content-column"><FactorBreakdown logs={dashboard.logs} /><div className="gentle-reminder"><span><Sparkles size={17} /></span><div><strong>Small steps, useful signals.</strong><p>The more consistently you log, the better your personal baseline becomes. Patterns describe history — not cause or future risk.</p></div></div></div></div>}
           {active === "care-team" && <div className="content-grid care-grid"><ContactPanel contacts={dashboard.contacts} onAdd={addContact} /><section className="panel care-safety"><span className="care-safety-icon"><ShieldAlert size={21} /></span><div className="eyebrow">WHEN IT MATTERS</div><h2>A safer plan starts with a conversation.</h2><p>Share your preferences with someone you trust. Emergency email alerts are sent only when a server email provider is configured.</p><button className="subtle-link" type="button" onClick={() => setEmergencyOpen(true)}>Record an event <ArrowRight size={16} /></button><div className="care-note"><LockKeyhole size={15} /> Your contact details are private to your account.</div></section></div>}
-          {active === "assistant" && <AssistantPanel dashboard={dashboard} />}
+          {active === "assistant" && <AssistantPanel />}
           <footer className="page-footer"><span>© {new Date().getFullYear()} EpiSafe AI</span><span><ShieldAlert size={14} /> For personal tracking only. Not a substitute for professional medical care.</span></footer>
         </div>
       </main>

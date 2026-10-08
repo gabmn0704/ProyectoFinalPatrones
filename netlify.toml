@@ -10,11 +10,6 @@
   autoLaunch = false
 
 [[redirects]]
-  from = "/api/assistant"
-  to = "/.netlify/functions/assistant"
-  status = 200
-
-[[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/api/:splat"
   status = 200

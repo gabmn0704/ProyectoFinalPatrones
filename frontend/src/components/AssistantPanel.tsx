@@ -1,16 +1,13 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
   Bot, Check, CircleHelp, HeartHandshake, LoaderCircle, MessageCircle, Send,
   ShieldAlert, Sparkles, Trash2, UserRound,
 } from "lucide-react";
-import type { DashboardData } from "../types";
-import { askEpiSafeAssistant } from "../lib/assistantApi";
+import { askEpiSafeAssistant, type AssistantProgress } from "../lib/assistantApi";
 import {
   clearAssistantMemory, loadAssistantMemory, saveAssistantMemory,
   type AssistantChatMessage,
 } from "../lib/assistantMemory";
-
-const consentKey = "episafe.assistant.openai-consent";
 
 const suggestedQuestions = [
   { icon: HeartHandshake, text: "Help me prepare questions for my next neurology appointment." },
@@ -18,49 +15,18 @@ const suggestedQuestions = [
   { icon: CircleHelp, text: "What information is useful to track between appointments?" },
 ];
 
-function buildHealthSummary(dashboard: DashboardData): string {
-  const recentLogs = [...dashboard.logs]
-    .sort((first, second) => second.date.localeCompare(first.date))
-    .slice(0, 14);
-  const average = (values: number[]) => values.length
-    ? (values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(1)
-    : "not available";
-  const severities = dashboard.events.reduce<Record<string, number>>((totals, event) => {
-    totals[event.severity] = (totals[event.severity] ?? 0) + 1;
-    return totals;
-  }, {});
-  const patternSummary = dashboard.insights
-    .filter((insight) => insight.id !== "building-baseline" && insight.id !== "no-patterns-yet")
-    .map((insight) => `${insight.title}: ${insight.description}`)
-    .join("\n");
-
-  return [
-    `Recent check-ins included: ${recentLogs.length}.`,
-    `Average sleep hours: ${average(recentLogs.map((log) => log.sleep_hours))}.`,
-    `Average self-reported stress (scale 1-5): ${average(recentLogs.map((log) => log.stress_level))}.`,
-    `Medication marked missed: ${recentLogs.filter((log) => !log.medication_taken).length} of ${recentLogs.length} check-ins.`,
-    `Check-ins with 3 or more caffeine cups: ${recentLogs.filter((log) => log.caffeine_cups >= 3).length}.`,
-    `Recorded seizure events in this browser history: ${dashboard.events.length}.`,
-    `Recorded event severity counts: ${Object.entries(severities).map(([severity, count]) => `${severity}=${count}`).join(", ") || "none"}.`,
-    patternSummary ? `Observed app associations (not causal findings):\n${patternSummary}` : "The app has not found a recurring association in this history.",
-    "The interactive demo may contain fictional sample entries.",
-  ].join("\n");
-}
-
 function newMessage(role: AssistantChatMessage["role"], content: string): AssistantChatMessage {
   return { id: crypto.randomUUID(), role, content, createdAt: new Date().toISOString() };
 }
 
-export function AssistantPanel({ dashboard }: { dashboard: DashboardData }) {
+export function AssistantPanel() {
   const [messages, setMessages] = useState<AssistantChatMessage[]>(() => loadAssistantMemory());
   const [input, setInput] = useState("");
-  const [consented, setConsented] = useState(() => window.localStorage.getItem(consentKey) === "yes");
-  const [includeHealthSummary, setIncludeHealthSummary] = useState(false);
   const [sending, setSending] = useState(false);
+  const [aiProgress, setAiProgress] = useState<AssistantProgress>({ phase: "idle" });
   const [error, setError] = useState("");
   const [confirmClear, setConfirmClear] = useState(false);
   const endOfMessages = useRef<HTMLDivElement>(null);
-  const healthSummary = useMemo(() => buildHealthSummary(dashboard), [dashboard]);
 
   useEffect(() => {
     endOfMessages.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -69,10 +35,6 @@ export function AssistantPanel({ dashboard }: { dashboard: DashboardData }) {
   const sendMessage = async (text: string, retry = false) => {
     const trimmed = text.trim();
     if (!trimmed || sending) return;
-    if (!consented) {
-      setError("Please read and accept the privacy notice before sending a message.");
-      return;
-    }
     setError("");
     setInput("");
     setSending(true);
@@ -86,13 +48,12 @@ export function AssistantPanel({ dashboard }: { dashboard: DashboardData }) {
       setSending(false);
       return;
     }
+
     try {
-      const reply = await askEpiSafeAssistant(
-        conversation,
-        includeHealthSummary ? healthSummary : undefined,
-      );
+      const reply = await askEpiSafeAssistant(conversation, setAiProgress);
       const updated = [...conversation, newMessage("assistant", reply)];
       setMessages(updated);
+      setAiProgress({ phase: "ready" });
       try {
         saveAssistantMemory(updated);
       } catch (storageError) {
@@ -132,37 +93,35 @@ export function AssistantPanel({ dashboard }: { dashboard: DashboardData }) {
     }
   };
 
+  const progressLabel = aiProgress.phase === "downloading"
+    ? `Downloading the AI model${aiProgress.progress === undefined ? "…" : `… ${Math.round(aiProgress.progress)}%`}`
+    : aiProgress.phase === "loading"
+      ? "Preparing the local AI model…"
+      : aiProgress.phase === "generating"
+        ? "Generating a reply on this device…"
+        : "";
+
   return (
     <section className="assistant-layout" aria-label="EpiSafe AI assistant">
       <div className="assistant-panel panel">
         <div className="assistant-heading">
           <span className="assistant-avatar"><Bot size={22} /></span>
-          <div><div className="eyebrow"><Sparkles size={14} /> OPENAI · GPT-4.1 MINI</div><h2>Your care companion</h2><p>Thoughtful support for reflection and conversations with your care team.</p></div>
-          <div className="assistant-online">Server API</div>
+          <div><div className="eyebrow"><Sparkles size={14} /> QWEN 2.5 · 0.5B</div><h2>Your care companion</h2><p>Thoughtful support for reflection and conversations with your care team.</p></div>
+          <div className="assistant-online">On this device</div>
         </div>
 
-        {!consented && (
-          <div className="assistant-consent">
-            <div className="assistant-consent-title"><ShieldAlert size={18} /><strong>Before you chat</strong></div>
-            <p>Your messages are sent securely to OpenAI to generate replies. Chat memory stays in this browser and is not saved to an EpiSafe account. Please avoid names and identifying details. The assistant is not a clinician or emergency service.</p>
-            <label className="assistant-check"><input type="checkbox" checked={consented} onChange={(event) => {
-              try {
-                window.localStorage.setItem(consentKey, event.target.checked ? "yes" : "no");
-                setConsented(event.target.checked);
-              } catch (reason) {
-                console.error("Unable to save assistant consent.", reason);
-                setError("Your browser could not save this consent choice. Check its local storage settings.");
-              }
-            }} /><span>I understand and agree to send my messages to OpenAI for a reply.</span></label>
-          </div>
-        )}
-
-        {consented && (
-          <label className="assistant-health-toggle">
-            <input type="checkbox" checked={includeHealthSummary} onChange={(event) => setIncludeHealthSummary(event.target.checked)} />
-            <span><strong>Use my EpiSafe check-in summary for more personal suggestions</strong><small>If enabled, a short summary of recent structured check-ins and recorded events is sent with your message. Notes, name, email, and contacts are never included.</small></span>
-          </label>
-        )}
+        <div className="assistant-consent">
+          <div className="assistant-consent-title"><ShieldAlert size={18} /><strong>Private, on-device AI</strong></div>
+          <p>Your conversation is processed on this device and is not sent to an AI service or stored in EpiSafe's cloud. The first use downloads the Qwen 2.5 0.5B model from Hugging Face (roughly 500–800 MB); your browser caches it for later use. A modern browser and a reliable connection are recommended. This small model may be slower or less capable than paid cloud AI.</p>
+          {progressLabel && (
+            <div className="assistant-model-progress" role="status">
+              <span>{progressLabel}</span>
+              {aiProgress.phase === "downloading" && aiProgress.progress !== undefined && (
+                <progress max="100" value={aiProgress.progress} aria-label="AI model download progress" />
+              )}
+            </div>
+          )}
+        </div>
 
         <div className="assistant-messages" aria-live="polite" aria-relevant="additions text">
           {messages.length === 0 ? (
@@ -171,7 +130,7 @@ export function AssistantPanel({ dashboard }: { dashboard: DashboardData }) {
               <h3>A thoughtful place to start.</h3>
               <p>Ask a question, explore a routine, or get help preparing for a conversation with your clinician.</p>
               <div className="assistant-suggestions">
-                {suggestedQuestions.map(({ icon: Icon, text }) => <button key={text} type="button" disabled={sending || !consented} onClick={() => void sendMessage(text)}><Icon size={16} /><span>{text}</span></button>)}
+                {suggestedQuestions.map(({ icon: Icon, text }) => <button key={text} type="button" disabled={sending} onClick={() => void sendMessage(text)}><Icon size={16} /><span>{text}</span></button>)}
               </div>
             </div>
           ) : (
@@ -186,16 +145,21 @@ export function AssistantPanel({ dashboard }: { dashboard: DashboardData }) {
           <div ref={endOfMessages} />
         </div>
 
-        {error && <div className="assistant-error" role="alert"><ShieldAlert size={16} /><span>{error}</span>{messages.at(-1)?.role === "user" && consented && <button type="button" disabled={sending} onClick={() => void sendMessage(messages.at(-1)!.content, true)}>Retry</button>}</div>}
+        {error && (
+          <div className="assistant-error" role="alert">
+            <ShieldAlert size={16} /><span>{error}</span>
+            {messages.at(-1)?.role === "user" && <button type="button" disabled={sending} onClick={() => void sendMessage(messages.at(-1)!.content, true)}>Retry</button>}
+          </div>
+        )}
 
         <form className="assistant-composer" onSubmit={submit}>
-          <textarea aria-label="Message EpiSafe Guide" maxLength={1200} rows={2} placeholder={consented ? "Ask your care companion…" : "Accept the privacy notice to start chatting"} value={input} disabled={!consented || sending} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => {
+          <textarea aria-label="Message EpiSafe Guide" maxLength={1200} rows={2} placeholder="Ask your care companion…" value={input} disabled={sending} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey) {
               event.preventDefault();
               void sendMessage(input);
             }
           }} />
-          <button className="assistant-send" type="submit" aria-label="Send message" disabled={!consented || sending || !input.trim()}>{sending ? <LoaderCircle size={18} className="assistant-spinner" /> : <Send size={18} />}</button>
+          <button className="assistant-send" type="submit" aria-label="Send message" disabled={sending || !input.trim()}>{sending ? <LoaderCircle size={18} className="assistant-spinner" /> : <Send size={18} />}</button>
           <span className="assistant-composer-hint">Enter to send · Shift+Enter for a new line</span>
         </form>
 

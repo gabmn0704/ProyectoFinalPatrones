@@ -1,8 +1,13 @@
-# EpiSafe AI: Experimental On-Device Learning Model
+# EpiSafe AI: On-Device Models
 
 ## What is implemented
 
-EpiSafe uses an interpretable **logistic-regression association model**, implemented in TypeScript in `frontend/src/lib/riskEngine.ts`. It is a small, personal machine-learning model, not a generative AI chatbot and not a call to an external AI API.
+EpiSafe has two separate on-device models:
+
+- The **logistic-regression association model**, implemented in TypeScript in `frontend/src/lib/riskEngine.ts`, analyzes the user's recorded check-ins.
+- The **Qwen 2.5 0.5B Instruct** language model, loaded with Transformers.js and ONNX Runtime from `frontend/src/lib/assistantModel.worker.ts`, powers the EpiSafe Guide chat. It runs in a browser Web Worker and does not call an inference API.
+
+The chat downloads its quantized model files from Hugging Face on first use (roughly 500–800 MB, depending on browser/runtime selection). Transformers.js caches downloaded files in the browser for later sessions where browser storage permits. A user needs a compatible modern browser, a reliable initial connection, and adequate device memory. Model responses may be slower, less capable, or less reliable than responses from a larger hosted model.
 
 The model learns from one person's recorded daily check-ins and seizure-event days. It estimates an experimental 0–100 association signal for the factors in today's check-in based on patterns in that person's past records. The number is a model score, **not a probability or medical risk estimate**.
 
@@ -25,7 +30,8 @@ A logged calendar day is labeled positive if at least one seizure event was reco
 - The model stays on transparent starter rules until the history contains at least 30 prior check-ins, 5 recorded seizure days, and 15 logged days without a recorded seizure.
 - Training uses regularized binary logistic regression, a smoothed empirical starting intercept, bounded logits, and fixed-step batch gradient descent. It retrains locally from the stored history when the dashboard is calculated.
 - The interface shows the model type and the number of records used. It explicitly states that the result is not a probability, forecast, diagnosis, or medical advice.
-- No health data is sent to a generative AI provider. In the current beta, records remain in browser local storage.
+- The chat prompt and conversation history stay on the device; they are not sent to an inference provider. The browser does contact Hugging Face to download model files on first use.
+- In the current beta, health records and the assistant conversation remain in browser local storage.
 
 ## Important limitations
 

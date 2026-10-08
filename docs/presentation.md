@@ -24,9 +24,9 @@ Una herramienta de autocuidado que conecta el registro diario, la observación d
 
 ## Diapositiva 4 — ¿Dónde está la IA?
 
-EpiSafe incorpora un modelo experimental de **regresión logística personalizada**, implementado en TypeScript y ejecutado localmente en el navegador. Aprende asociaciones entre cuatro factores registrados (sueño corto, medicamento omitido, estrés elevado y cafeína) y días con eventos registrados. Utiliza hasta 90 días de check-ins y regularización para limitar el ajuste excesivo.
+EpiSafe incorpora un modelo experimental de **regresión logística personalizada**, implementado en TypeScript y ejecutado localmente en el navegador. Aprende asociaciones entre cuatro factores registrados (sueño corto, medicamento omitido, estrés elevado y cafeína) y días con eventos registrados. Utiliza hasta 90 días de check-ins y regularización para limitar el ajuste excesivo. Además, EpiSafe Guide usa **Qwen 2.5 0.5B Instruct**, un modelo de lenguaje multilingüe ejecutado en el navegador con Transformers.js y ONNX Runtime.
 
-El modelo solo se activa después de contar con al menos 30 check-ins anteriores, 5 días con eventos y 15 días sin eventos registrados. Antes de alcanzar ese umbral, la interfaz utiliza reglas iniciales transparentes. El modelo excluye el check-in de hoy durante el entrenamiento y presenta los factores observados para que el resultado sea explicable. Además, EpiSafe Guide incorpora el modelo conversacional OpenAI GPT-4.1 mini desde una función privada en Netlify. La persona acepta explícitamente el envío de mensajes a OpenAI; compartir un resumen de registros es opcional y está desactivado inicialmente. El historial conversacional se conserva solo en el navegador.
+El modelo predictivo solo se activa después de contar con al menos 30 check-ins anteriores, 5 días con eventos y 15 días sin eventos registrados. Antes de alcanzar ese umbral, la interfaz utiliza reglas iniciales transparentes. El modelo excluye el check-in de hoy durante el entrenamiento y presenta los factores observados para que el resultado sea explicable. El chat de Qwen se ejecuta en el dispositivo: no necesita API key ni envía la conversación a un servicio de inferencia. La primera vez se descargan y se guardan en caché entre 500 y 800 MB de archivos del modelo desde Hugging Face. La memoria del chat se conserva en el navegador.
 
 El puntaje de 0 a 100 es una señal experimental de asociación, **no una probabilidad, pronóstico ni predicción clínica**. No se envían datos a un proveedor de IA. Los registros de la beta son locales y los ejemplos precargados son ficticios. El modelo no está validado clínicamente; no diagnostica, modifica dosis ni recomienda tratamientos.
 
@@ -49,7 +49,7 @@ El puntaje de 0 a 100 es una señal experimental de asociación, **no una probab
 **Autenticación y datos:** Supabase Auth + PostgreSQL en la nube.  
 **Seguridad:** claves de servidor privadas, consultas con alcance por usuario y Row Level Security.  
 **Notificaciones:** Resend opcional, integrado desde funciones de backend.
-**Asistente conversacional:** OpenAI GPT-4.1 mini, llamado exclusivamente desde el backend; requiere configurar `OPENAI_API_KEY` en Netlify.
+**Asistente conversacional:** Qwen 2.5 0.5B Instruct, ejecutado localmente con Transformers.js y ONNX Runtime en un Web Worker del navegador; no requiere API key ni inferencia en la nube.
 
 Todo el código y las funciones de la aplicación se escriben en TypeScript.
 
@@ -60,7 +60,7 @@ Todo el código y las funciones de la aplicación se escriben en TypeScript.
 - La clave de servicio de Supabase se guarda únicamente en el servidor.
 - Los correos de emergencia no incluyen detalles del evento.
 - En modo demo, los datos se almacenan localmente en el navegador.
-- El chat requiere consentimiento informado; el resumen de salud estructurado se comparte solo con un control opcional. No se envían notas libres, nombres ni contactos al modelo.
+- El chat usa inferencia local; la conversación no se envía a un proveedor de IA. En el primer uso se descargan los archivos del modelo desde Hugging Face.
 - La memoria conversacional del asistente se conserva en el navegador y se puede borrar desde la interfaz.
 - Un correo puede fallar o demorarse; nunca sustituye una llamada a emergencias.
 

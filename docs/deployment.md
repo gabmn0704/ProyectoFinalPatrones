@@ -31,11 +31,9 @@ EpiSafe stores a member's display name in Supabase Auth user metadata (`full_nam
    - Secret `NETLIFY_SITE_ID`: the Netlify Site ID.
 3. Use the repository root as the build base. The checked-in `netlify.toml` configures `npm run build`, `dist`, and `backend/functions`.
 4. Set the server-only Netlify Function variables `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to the Supabase URL and service-role key. These have no `VITE_` prefix and are not bundled into the browser.
-5. To activate EpiSafe Guide, create an OpenAI API key in the project owner's OpenAI account and add it as the server-only Netlify environment variable `OPENAI_API_KEY`. Optionally set `OPENAI_MODEL` (defaults to `gpt-4.1-mini`). Never paste the key into the app, GitHub source, a `VITE_` variable, or a chat message. Review OpenAI API pricing and data controls before enabling this feature for real health information. Redeploy after setting variables. The assistant returns an explicit configuration message until the key is present.
+5. EpiSafe Guide needs no AI API key or Netlify Function configuration. It runs Qwen 2.5 0.5B Instruct in a browser Web Worker using Transformers.js/ONNX Runtime. On the first chat, the browser downloads the quantized model from Hugging Face (roughly 500–800 MB) and caches it locally; a reliable connection and a modern browser/device are recommended. Later sessions reuse the cache where the browser permits. The browser contacts Hugging Face to download model files, but chat prompts and conversation history are not uploaded. Local inference may be slower and less capable than a paid cloud model. This model is for educational support only and is not clinically validated.
 6. The GitHub Actions workflow `.github/workflows/netlify.yml` runs `npm ci`, the TypeScript check, unit tests, and the production build on pull requests and pushes to `main`. A push to `main` also deploys `dist` to Netlify using the Netlify CLI. Pull requests are validated but do not deploy production.
 7. Copy the assigned Netlify HTTPS URL into Supabase's allowed redirect URLs and the Netlify Function variable `APP_BASE_URL`. Redeploy after changing environment variables.
-
-The assistant limits request size, conversation length, and generated output, and applies best-effort per-function-instance throttling. That in-memory throttle is not a durable global quota; configure provider spending limits and any available site-level rate controls before making the public demo widely available.
 
 Set secrets in Netlify's site environment-variable settings or CLI secret store; do not put real values in `.env.example`, Git, screenshots, or presentation material. For local cloud development, copy `.env.example` to `.env` and fill it privately; `VITE_` values are public by design, while the service-role key must only be consumed in the Netlify Functions runtime.
 
@@ -71,5 +69,3 @@ The emergency form records the event before attempting notification. The UI repo
 | `RESEND_API_KEY` | Function runtime only | Optional email delivery; secret |
 | `EMERGENCY_FROM_EMAIL` | Function runtime only | Verified Resend sender |
 | `APP_BASE_URL` | Function runtime | Production origin for API CORS |
-| `OPENAI_API_KEY` | Function runtime only | Secret used by EpiSafe Guide to call OpenAI |
-| `OPENAI_MODEL` | Function runtime only | Optional model override; defaults to `gpt-4.1-mini` |
