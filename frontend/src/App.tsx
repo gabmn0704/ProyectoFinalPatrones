@@ -39,6 +39,22 @@ function AuthScreen({ demoMode, onDemoContinue }: AuthScreenProps) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  const signInWithGoogle = async () => {
+    setLoading(true);
+    setError("");
+    setMessage("");
+    try {
+      const { error: signInError } = await supabase!.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: window.location.origin },
+      });
+      if (signInError) throw signInError;
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "We could not start Google sign-in.");
+      setLoading(false);
+    }
+  };
+
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
@@ -92,6 +108,12 @@ function AuthScreen({ demoMode, onDemoContinue }: AuthScreenProps) {
             <p className="demo-auth-note"><ShieldAlert size={15} />Demo mode is not a secure account. Add your Supabase project to turn on real sign-in and cloud storage.</p>
           </form>
         ) : (
+        <>
+        <button className="google-auth-button" disabled={loading} type="button" onClick={() => void signInWithGoogle()}>
+          <span className="google-mark" aria-hidden="true">G</span>
+          Continue with Google
+        </button>
+        <div className="auth-divider"><span>or continue with email</span></div>
         <form className="auth-form" onSubmit={submit}>
           <label className="field-label">Your name<input autoComplete="name" maxLength={80} minLength={2} required value={name} onChange={(event) => setName(event.target.value)} placeholder="Your first and last name" /></label>
           <label className="field-label">Email address<input autoComplete="email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
@@ -100,6 +122,7 @@ function AuthScreen({ demoMode, onDemoContinue }: AuthScreenProps) {
           {message && <p className="form-message success-message"><Check size={15} />{message}</p>}
           <button className="primary-button auth-submit" disabled={loading} type="submit">{loading ? "Please wait…" : isSignUp ? "Create a private account" : "Sign in"}<ArrowRight size={17} /></button>
         </form>
+        </>
         )}
         {!demoMode && (
         <button className="auth-switch" type="button" onClick={() => { setIsSignUp((value) => !value); setError(""); setMessage(""); }}>
@@ -330,7 +353,11 @@ export default function App() {
   );
 
   const selected = sectionTitles[active];
-  const userName = session?.user.user_metadata.full_name ?? demoUserName;
+  const userName = session?.user.user_metadata.full_name
+    ?? session?.user.user_metadata.name
+    ?? session?.user.user_metadata.given_name
+    ?? session?.user.email?.split("@")[0]
+    ?? demoUserName;
   const onSignOut = session ? () => { void supabase!.auth.signOut(); } : () => { setDashboard(null); setDemoUserName(""); saveDemoUserName(""); };
   const normalizedSearch = searchQuery.trim().toLowerCase();
   const searchResults = normalizedSearch ? [

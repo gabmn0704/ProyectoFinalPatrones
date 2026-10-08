@@ -14,6 +14,13 @@ The schema creates `daily_logs`, `seizure_events`, and `emergency_contacts`, wit
 
 EpiSafe stores a member's display name in Supabase Auth user metadata (`full_name`); a separate public profile table is not required. The sign-up form requires the member's name, email, and password. On an existing account without a saved name, the next sign-in saves the submitted name to Auth metadata. Each care-data table uses the authenticated Supabase user ID and row-level security to keep members' records separate.
 
+### Google sign-in
+
+1. In **Authentication → Sign In / Providers**, enable **Google** and enter the OAuth client ID and client secret from a Google Cloud OAuth client configured as a Web application.
+2. In Google Cloud, add the Supabase callback URL shown in the Google provider settings (typically `https://<project-ref>.supabase.co/auth/v1/callback`) as an authorized redirect URI.
+3. Keep the production Netlify site URL in Supabase **Authentication → URL Configuration → Redirect URLs**. The app sends users back to the current site origin after Google authentication.
+4. Save the provider settings. Google supplies the account profile name used to personalize the EpiSafe dashboard; email/password sign-in remains available.
+
 ## 2. Deploy from GitHub to Netlify
 
 1. In Netlify, create a site and connect the GitHub repository, or create an empty Netlify site for CLI deploys. Note its Site ID and create a Netlify personal access token.
