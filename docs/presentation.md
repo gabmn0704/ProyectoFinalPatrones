@@ -26,7 +26,7 @@ Una herramienta de autocuidado que conecta el registro diario, la observación d
 
 EpiSafe incorpora un modelo experimental de **regresión logística personalizada**, implementado en TypeScript y ejecutado localmente en el navegador. Aprende asociaciones entre cuatro factores registrados (sueño corto, medicamento omitido, estrés elevado y cafeína) y días con eventos registrados. Utiliza hasta 90 días de check-ins y regularización para limitar el ajuste excesivo.
 
-El modelo solo se activa después de contar con al menos 30 check-ins anteriores, 5 días con eventos y 15 días sin eventos registrados. Antes de alcanzar ese umbral, la interfaz utiliza reglas iniciales transparentes. El modelo excluye el check-in de hoy durante el entrenamiento y presenta los factores observados para que el resultado sea explicable.
+El modelo solo se activa después de contar con al menos 30 check-ins anteriores, 5 días con eventos y 15 días sin eventos registrados. Antes de alcanzar ese umbral, la interfaz utiliza reglas iniciales transparentes. El modelo excluye el check-in de hoy durante el entrenamiento y presenta los factores observados para que el resultado sea explicable. Además, EpiSafe Guide incorpora el modelo conversacional OpenAI GPT-4.1 mini desde una función privada en Netlify. La persona acepta explícitamente el envío de mensajes a OpenAI; compartir un resumen de registros es opcional y está desactivado inicialmente. El historial conversacional se conserva solo en el navegador.
 
 El puntaje de 0 a 100 es una señal experimental de asociación, **no una probabilidad, pronóstico ni predicción clínica**. No se envían datos a un proveedor de IA. Los registros de la beta son locales y los ejemplos precargados son ficticios. El modelo no está validado clínicamente; no diagnostica, modifica dosis ni recomienda tratamientos.
 
@@ -49,6 +49,7 @@ El puntaje de 0 a 100 es una señal experimental de asociación, **no una probab
 **Autenticación y datos:** Supabase Auth + PostgreSQL en la nube.  
 **Seguridad:** claves de servidor privadas, consultas con alcance por usuario y Row Level Security.  
 **Notificaciones:** Resend opcional, integrado desde funciones de backend.
+**Asistente conversacional:** OpenAI GPT-4.1 mini, llamado exclusivamente desde el backend; requiere configurar `OPENAI_API_KEY` en Netlify.
 
 Todo el código y las funciones de la aplicación se escriben en TypeScript.
 
@@ -59,6 +60,8 @@ Todo el código y las funciones de la aplicación se escriben en TypeScript.
 - La clave de servicio de Supabase se guarda únicamente en el servidor.
 - Los correos de emergencia no incluyen detalles del evento.
 - En modo demo, los datos se almacenan localmente en el navegador.
+- El chat requiere consentimiento informado; el resumen de salud estructurado se comparte solo con un control opcional. No se envían notas libres, nombres ni contactos al modelo.
+- La memoria conversacional del asistente se conserva en el navegador y se puede borrar desde la interfaz.
 - Un correo puede fallar o demorarse; nunca sustituye una llamada a emergencias.
 
 ## Diapositiva 8 — Alcance y responsabilidad

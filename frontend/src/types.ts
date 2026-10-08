@@ -70,4 +70,4 @@ export interface EmergencyReportResult {
   notificationStatus: "sent" | "not_configured" | "no_contacts" | "failed";
 }
 
-export type AppSection = "overview" | "daily-log" | "history" | "insights" | "care-team";
+export type AppSection = "overview" | "daily-log" | "history" | "insights" | "care-team" | "assistant";

@@ -1,6 +1,6 @@
 import {
   Activity, BookOpenCheck, CalendarDays, ChartNoAxesCombined, HeartHandshake,
-  LayoutDashboard, LifeBuoy, ShieldCheck,
+  LayoutDashboard, LifeBuoy, MessageCircle, ShieldCheck,
 } from "lucide-react";
 import type { AppSection } from "../types";
 
@@ -9,6 +9,7 @@ const navigation: Array<{ id: AppSection; label: string; icon: typeof LayoutDash
   { id: "daily-log", label: "Daily check-in", icon: BookOpenCheck },
   { id: "history", label: "Seizure history", icon: CalendarDays },
   { id: "insights", label: "My patterns", icon: ChartNoAxesCombined },
+  { id: "assistant", label: "AI care companion", icon: MessageCircle },
   { id: "care-team", label: "Care circle", icon: HeartHandshake },
 ];
 

@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { ContactPanel } from "./components/ContactPanel";
+import { AssistantPanel } from "./components/AssistantPanel";
 import { EmergencyModal } from "./components/EmergencyModal";
 import { InsightPanel } from "./components/InsightPanel";
 import { LogForm, type LogFormValues } from "./components/LogForm";
@@ -23,6 +24,7 @@ const sectionTitles: Record<AppSection, { title: string; subtitle: string }> = {
   history: { title: "Your story, thoughtfully kept.", subtitle: "A clear, private record to share with your care team when you choose." },
   insights: { title: "Getting to know your patterns.", subtitle: "Observations from your own history, never a diagnosis." },
   "care-team": { title: "You don’t have to go it alone.", subtitle: "The people you trust, close at hand when it matters." },
+  assistant: { title: "A thoughtful space to talk.", subtitle: "Reflect, find gentle routines, and prepare questions for your care team." },
 };
 
 const DEMO_MODE = true;
@@ -477,6 +479,7 @@ export default function App() {
           {active === "history" && <HistoryView data={dashboard} />}
           {active === "insights" && <div className="content-grid insights-grid"><InsightPanel insights={dashboard.insights} /><div className="content-column"><FactorBreakdown logs={dashboard.logs} /><div className="gentle-reminder"><span><Sparkles size={17} /></span><div><strong>Small steps, useful signals.</strong><p>The more consistently you log, the better your personal baseline becomes. Patterns describe history — not cause or future risk.</p></div></div></div></div>}
           {active === "care-team" && <div className="content-grid care-grid"><ContactPanel contacts={dashboard.contacts} onAdd={addContact} /><section className="panel care-safety"><span className="care-safety-icon"><ShieldAlert size={21} /></span><div className="eyebrow">WHEN IT MATTERS</div><h2>A safer plan starts with a conversation.</h2><p>Share your preferences with someone you trust. Emergency email alerts are sent only when a server email provider is configured.</p><button className="subtle-link" type="button" onClick={() => setEmergencyOpen(true)}>Record an event <ArrowRight size={16} /></button><div className="care-note"><LockKeyhole size={15} /> Your contact details are private to your account.</div></section></div>}
+          {active === "assistant" && <AssistantPanel dashboard={dashboard} />}
           <footer className="page-footer"><span>© {new Date().getFullYear()} EpiSafe AI</span><span><ShieldAlert size={14} /> For personal tracking only. Not a substitute for professional medical care.</span></footer>
         </div>
       </main>
